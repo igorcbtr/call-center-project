@@ -1,0 +1,88 @@
+.page {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.head {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+  align-items: flex-end;
+}
+
+.title {
+  font-size: var(--text-2xl);
+  margin-bottom: 0.25rem;
+}
+
+.sub {
+  margin: 0;
+  font-size: var(--text-sm);
+  color: var(--color-text-muted);
+}
+
+.filters {
+  display: flex;
+  gap: 0.75rem;
+}
+
+.f {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  font-size: var(--text-xs);
+  font-weight: 700;
+  color: var(--color-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.sel {
+  min-height: 40px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--color-border);
+  padding: 0 0.5rem;
+  font-weight: 600;
+  background: #fff;
+}
+
+.card {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  padding: 1rem;
+  box-shadow: var(--shadow-sm);
+}
+
+.chart {
+  width: 100%;
+}
+
+.muted {
+  margin: 0 0 0.5rem;
+  font-size: var(--text-sm);
+  color: var(--color-text-muted);
+}
+
+.tt {
+  background: #fff;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  padding: 0.5rem 0.65rem;
+  box-shadow: var(--shadow-sm);
+}
+
+.ttTitle {
+  font-size: var(--text-xs);
+  font-weight: 800;
+  color: var(--color-text);
+  margin-bottom: 0.25rem;
+}
+
+.ttVal {
+  font-size: var(--text-sm);
+  font-weight: 700;
+  color: var(--color-primary-hover);
+}

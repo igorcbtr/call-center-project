@@ -1,0 +1,573 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Документация — Колл-центр MVP</title>
+<style>
+  *,*::before,*::after{box-sizing:border-box}
+  :root{
+    --primary:#6366f1;--primary-light:#eff6ff;--surface:#fff;
+    --bg:#f1f5f9;--border:#e2e8f0;--text:#1e293b;--muted:#64748b;
+    --success:#10b981;--warning:#f59e0b;--danger:#ef4444;
+  }
+  body{margin:0;font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:var(--bg);color:var(--text);line-height:1.6;-webkit-font-smoothing:antialiased}
+  a{color:var(--primary);text-decoration:none}
+  a:hover{text-decoration:underline}
+  code{background:#f1f5f9;border:1px solid var(--border);border-radius:4px;padding:1px 6px;font-size:.85em;font-family:'JetBrains Mono','Fira Code',monospace}
+  pre{background:#1e293b;color:#e2e8f0;border-radius:10px;padding:16px 20px;overflow-x:auto;font-size:13px;line-height:1.7}
+  pre code{background:none;border:none;padding:0;color:inherit;font-size:inherit}
+  table{width:100%;border-collapse:collapse;margin:12px 0}
+  th{background:#f8fafc;text-align:left;font-size:13px;color:var(--muted);padding:8px 12px;border:1px solid var(--border);font-weight:600}
+  td{padding:8px 12px;border:1px solid var(--border);font-size:14px;vertical-align:top}
+  tr:hover td{background:#fafbfc}
+
+  /* Layout */
+  .layout{display:flex;min-height:100vh}
+  .sidebar{width:260px;flex-shrink:0;background:var(--surface);border-right:1px solid var(--border);padding:24px 0;position:sticky;top:0;height:100vh;overflow-y:auto}
+  .main{flex:1;padding:0;overflow-x:hidden}
+
+  /* Sidebar */
+  .brand{display:flex;align-items:center;gap:10px;padding:0 20px 20px;border-bottom:1px solid var(--border);margin-bottom:16px}
+  .brandIcon{width:38px;height:38px;background:linear-gradient(135deg,#6366f1,#8b5cf6);border-radius:10px;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:900;font-size:14px}
+  .brandName{font-weight:800;font-size:15px;color:var(--text)}
+  .brandSub{font-size:11px;color:var(--muted)}
+  .navSection{padding:0 12px;margin-bottom:8px}
+  .navLabel{font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;padding:0 8px 6px}
+  .navLink{display:flex;align-items:center;gap:8px;padding:8px 12px;border-radius:8px;color:var(--muted);font-size:13px;font-weight:500;transition:all .15s}
+  .navLink:hover{background:#f1f5f9;color:var(--text);text-decoration:none}
+  .navLink.active{background:var(--primary-light);color:var(--primary)}
+
+  /* Content */
+  .hero{background:linear-gradient(135deg,#6366f1 0%,#8b5cf6 50%,#06b6d4 100%);color:#fff;padding:48px 56px}
+  .heroTitle{font-size:36px;font-weight:900;margin:0 0 12px;line-height:1.2}
+  .heroSub{font-size:16px;opacity:.85;margin:0 0 24px}
+  .heroBadges{display:flex;gap:8px;flex-wrap:wrap}
+  .badge{display:inline-flex;align-items:center;gap:4px;padding:4px 12px;border-radius:20px;font-size:12px;font-weight:600}
+  .badge-green{background:rgba(16,185,129,.25);color:#a7f3d0}
+  .badge-blue{background:rgba(59,130,246,.25);color:#bfdbfe}
+  .badge-purple{background:rgba(139,92,246,.25);color:#ddd6fe}
+
+  .content{padding:40px 56px}
+  .section{margin-bottom:48px;scroll-margin-top:80px}
+  h2{font-size:22px;font-weight:800;color:var(--text);margin:0 0 16px;padding-bottom:8px;border-bottom:2px solid var(--border)}
+  h3{font-size:16px;font-weight:700;color:var(--text);margin:24px 0 10px}
+  p{margin:0 0 12px;font-size:14px;color:#374151}
+
+  .card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:20px;margin-bottom:12px}
+  .card-title{font-weight:700;font-size:15px;color:var(--text);margin:0 0 8px}
+  .card-body{font-size:13px;color:var(--muted);line-height:1.6}
+
+  .grid-2{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:12px}
+  .grid-3{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px}
+
+  .role-card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:16px}
+  .role-name{font-weight:700;font-size:14px;color:var(--text);margin:0 0 4px;display:flex;align-items:center;gap:6px}
+  .role-chip{padding:2px 8px;border-radius:20px;font-size:11px;font-weight:600}
+  .chip-admin{background:#fee2e2;color:#991b1b}
+  .chip-mod{background:#fef3c7;color:#92400e}
+  .chip-op{background:#dbeafe;color:#1e40af}
+  .chip-stj{background:#d1fae5;color:#065f46}
+  .chip-uch{background:#ede9fe;color:#5b21b6}
+  .role-perms{font-size:12px;color:var(--muted);margin-top:8px;display:flex;flex-direction:column;gap:3px}
+  .perm{display:flex;align-items:center;gap:6px}
+  .perm::before{content:'✓';color:var(--success);font-weight:700}
+
+  .alert{border-radius:10px;padding:14px 16px;margin:12px 0;font-size:13px;display:flex;gap:10px}
+  .alert-info{background:#eff6ff;border:1px solid #bfdbfe;color:#1e40af}
+  .alert-warn{background:#fffbeb;border:1px solid #fde68a;color:#92400e}
+  .alert-success{background:#d1fae5;border:1px solid #a7f3d0;color:#065f46}
+
+  .step{display:flex;gap:14px;margin-bottom:16px}
+  .step-num{width:28px;height:28px;background:var(--primary);color:#fff;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;flex-shrink:0;margin-top:2px}
+  .step-body{flex:1}
+  .step-title{font-weight:700;font-size:14px;color:var(--text);margin-bottom:4px}
+  .step-text{font-size:13px;color:var(--muted)}
+
+  .api-endpoint{display:flex;align-items:center;gap:10px;padding:10px 14px;background:#f8fafc;border:1px solid var(--border);border-radius:8px;margin-bottom:8px;font-size:13px}
+  .method{font-weight:800;font-size:11px;padding:3px 8px;border-radius:6px;min-width:52px;text-align:center}
+  .m-get{background:#d1fae5;color:#065f46}
+  .m-post{background:#dbeafe;color:#1e40af}
+  .m-put{background:#fef3c7;color:#92400e}
+  .m-delete{background:#fee2e2;color:#991b1b}
+  .endpoint-path{font-family:'JetBrains Mono','Fira Code',monospace;color:var(--text)}
+  .endpoint-desc{margin-left:auto;color:var(--muted);font-size:12px}
+
+  footer{background:var(--surface);border-top:1px solid var(--border);padding:24px 56px;font-size:12px;color:var(--muted);display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px}
+</style>
+</head>
+<body>
+<div class="layout">
+
+<!-- Sidebar -->
+<nav class="sidebar">
+  <div class="brand">
+    <div class="brandIcon">CC</div>
+    <div>
+      <div class="brandName">Колл-центр MVP</div>
+      <div class="brandSub">Документация</div>
+    </div>
+  </div>
+
+  <div class="navSection">
+    <div class="navLabel">Начало работы</div>
+    <a class="navLink" href="#intro">📖 Введение</a>
+    <a class="navLink" href="#install">⚙️ Установка</a>
+    <a class="navLink" href="#first-start">🚀 Первый запуск</a>
+  </div>
+
+  <div class="navSection">
+    <div class="navLabel">Пользователи</div>
+    <a class="navLink" href="#roles">👥 Роли сотрудников</a>
+    <a class="navLink" href="#admin-guide">🔐 Руководство администратора</a>
+    <a class="navLink" href="#staff-guide">👤 Руководство сотрудника</a>
+  </div>
+
+  <div class="navSection">
+    <div class="navLabel">Функции</div>
+    <a class="navLink" href="#schedule">📅 График смен</a>
+    <a class="navLink" href="#change-requests">📋 Заявки на изменение</a>
+    <a class="navLink" href="#notifications">🔔 Уведомления</a>
+    <a class="navLink" href="#free-time">🕐 Свободное время</a>
+    <a class="navLink" href="#stats">📊 Статистика</a>
+  </div>
+
+  <div class="navSection">
+    <div class="navLabel">Технически</div>
+    <a class="navLink" href="#api">🔌 API эндпоинты</a>
+    <a class="navLink" href="#database">🗄️ База данных</a>
+    <a class="navLink" href="#env">🔧 Переменные окружения</a>
+    <a class="navLink" href="#faq">❓ FAQ</a>
+  </div>
+</nav>
+
+<!-- Main -->
+<div class="main">
+
+  <div class="hero">
+    <div class="heroTitle">📞 Колл-центр MVP<br>Документация</div>
+    <div class="heroSub">Система управления сотрудниками и графиками для колл-центра технической поддержки</div>
+    <div class="heroBadges">
+      <span class="badge badge-green">✓ Node.js + Express</span>
+      <span class="badge badge-blue">✓ React + TypeScript</span>
+      <span class="badge badge-purple">✓ PostgreSQL</span>
+      <span class="badge badge-green">✓ JWT авторизация</span>
+      <span class="badge badge-blue">✓ Версия 1.2.0</span>
+    </div>
+  </div>
+
+  <div class="content">
+
+    <!-- INTRO -->
+    <section class="section" id="intro">
+      <h2>📖 Введение</h2>
+      <p>
+        Система создана для централизации управления персоналом колл-центра. Заменяет разрозненные Google-таблицы и мессенджеры единой платформой.
+      </p>
+      <div class="grid-2">
+        <div class="card">
+          <div class="card-title">🎯 Задача системы</div>
+          <div class="card-body">Централизованное управление графиками работы, документацией и контролем присутствия сотрудников колл-центра технической поддержки.</div>
+        </div>
+        <div class="card">
+          <div class="card-title">⚡ Ключевые возможности</div>
+          <div class="card-body">Создание/редактирование графиков, система заявок на изменение смен, уведомления, статистика смен, управление сотрудниками.</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- INSTALL -->
+    <section class="section" id="install">
+      <h2>⚙️ Установка</h2>
+
+      <div class="alert alert-info">ℹ️ Убедитесь, что установлены: Node.js 18+, PostgreSQL 14+, npm или yarn.</div>
+
+      <h3>1. Распакуйте архив</h3>
+      <pre><code>unzip mvp_enhanced.zip -d call-center
+cd call-center</code></pre>
+
+      <h3>2. Настройте базу данных PostgreSQL</h3>
+      <pre><code># Создайте БД
+psql -U postgres
+CREATE DATABASE call_center_mvp;
+\q
+
+# Инициализируйте схему
+psql -U postgres -d call_center_mvp -f database/init.sql</code></pre>
+
+      <h3>3. Настройте бэкенд</h3>
+      <pre><code>cd backend
+cp .env.example .env
+# Откройте .env и заполните параметры подключения к БД
+
+npm install
+npm start</code></pre>
+
+      <h3>4. Настройте фронтенд</h3>
+      <pre><code>cd ../frontend
+cp .env.example .env
+# Проверьте VITE_API_URL в .env
+
+npm install
+npm run dev</code></pre>
+
+      <div class="alert alert-success">✅ Приложение доступно на <strong>http://localhost:5173</strong><br>API доступен на <strong>http://localhost:3002</strong><br>Документация: <strong>http://localhost:3002/docs</strong></div>
+    </section>
+
+    <!-- FIRST START -->
+    <section class="section" id="first-start">
+      <h2>🚀 Первый запуск</h2>
+      <div class="step">
+        <div class="step-num">1</div>
+        <div class="step-body">
+          <div class="step-title">Войдите как администратор</div>
+          <div class="step-text">Логин: <code>admin</code> / Пароль: <code>admin123</code> (смените после входа)</div>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num">2</div>
+        <div class="step-body">
+          <div class="step-title">Создайте типы смен</div>
+          <div class="step-text">Раздел «График» → типы смен уже созданы по умолчанию (Утренняя, Дневная, Ночная). При необходимости отредактируйте через SQL или добавьте API.</div>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num">3</div>
+        <div class="step-body">
+          <div class="step-title">Добавьте сотрудников</div>
+          <div class="step-text">Раздел «Сотрудники» → кнопка «Добавить». Укажите ФИО, роль, логин и пароль.</div>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num">4</div>
+        <div class="step-body">
+          <div class="step-title">Назначьте смены</div>
+          <div class="step-text">Раздел «График» → кликните на ячейку таблицы (сотрудник × день) и выберите тип смены.</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ROLES -->
+    <section class="section" id="roles">
+      <h2>👥 Роли сотрудников</h2>
+      <div class="grid-2">
+        <div class="role-card">
+          <div class="role-name">🔴 <span class="role-chip chip-admin">admin</span> Администратор</div>
+          <div class="role-perms">
+            <span class="perm">Полный доступ ко всем разделам</span>
+            <span class="perm">Создание/удаление сотрудников</span>
+            <span class="perm">Управление графиком всех</span>
+            <span class="perm">Рассмотрение заявок на изменение</span>
+            <span class="perm">Просмотр статистики</span>
+          </div>
+        </div>
+        <div class="role-card">
+          <div class="role-name">🟠 <span class="role-chip chip-mod">moderator</span> Модератор/Супервайзер</div>
+          <div class="role-perms">
+            <span class="perm">Просмотр своего графика</span>
+            <span class="perm">Запросы на изменение смены</span>
+            <span class="perm">Доступ к базе знаний</span>
+            <span class="perm">Запись свободного времени</span>
+          </div>
+        </div>
+        <div class="role-card">
+          <div class="role-name">🔵 <span class="role-chip chip-op">operator</span> Оператор</div>
+          <div class="role-perms">
+            <span class="perm">Просмотр своего графика</span>
+            <span class="perm">Запросы на изменение смены</span>
+            <span class="perm">Доступ к базе знаний</span>
+            <span class="perm">Запись свободного времени</span>
+          </div>
+        </div>
+        <div class="role-card">
+          <div class="role-name">🟢 <span class="role-chip chip-stj">stajer</span> Стажёр</div>
+          <div class="role-perms">
+            <span class="perm">Просмотр своего графика</span>
+            <span class="perm">Запросы на изменение смены</span>
+            <span class="perm">Запись свободного времени</span>
+          </div>
+        </div>
+        <div class="role-card">
+          <div class="role-name">🟣 <span class="role-chip chip-uch">uchenik</span> Ученик</div>
+          <div class="role-perms">
+            <span class="perm">Просмотр своего графика</span>
+            <span class="perm">Запросы на изменение смены</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ADMIN GUIDE -->
+    <section class="section" id="admin-guide">
+      <h2>🔐 Руководство администратора</h2>
+
+      <h3>Управление сотрудниками</h3>
+      <p>Раздел «Сотрудники» → таблица всех сотрудников. Доступные действия:</p>
+      <table>
+        <tr><th>Действие</th><th>Описание</th></tr>
+        <tr><td>Добавить сотрудника</td><td>Кнопка в правом верхнем углу. Укажите ФИО, роль, логин, пароль.</td></tr>
+        <tr><td>Редактировать</td><td>Иконка карандаша в строке сотрудника. Можно изменить ФИО, роль, статус.</td></tr>
+        <tr><td>Удалить</td><td>Иконка корзины. Требует подтверждения.</td></tr>
+        <tr><td>Сбросить пароль</td><td>Кнопка в форме редактирования. Пароль очищается, сотрудник регистрируется заново.</td></tr>
+      </table>
+
+      <h3>Управление графиком</h3>
+      <p>Раздел «График» → матрица сотрудники × дни недели.</p>
+      <div class="alert alert-info">💡 Ячейки с восклицательным знаком <strong>(!)</strong> и жёлтым фоном означают ожидающие заявки на изменение от сотрудника.</div>
+      <table>
+        <tr><th>Действие</th><th>Как</th></tr>
+        <tr><td>Назначить смену</td><td>Кликните на пустую ячейку → выберите тип смены → Сохранить</td></tr>
+        <tr><td>Изменить смену</td><td>Кликните на заполненную ячейку → выберите новый тип → Сохранить</td></tr>
+        <tr><td>Удалить смену</td><td>Кликните на ячейку → кнопка «Удалить смену»</td></tr>
+        <tr><td>Рассмотреть заявку</td><td>Кликните на ячейку с ! → кнопка «Рассмотреть»</td></tr>
+        <tr><td>Фильтрация</td><td>Поиск по имени и фильтр по роли в тулбаре</td></tr>
+      </table>
+
+      <h3>Рассмотрение заявок</h3>
+      <p>Раздел «Заявки» → список всех заявок. Фильтр по статусу: ожидающие, одобренные, отклонённые.</p>
+      <p>При одобрении заявки можно выбрать тип смены вручную. Сотрудник автоматически получает уведомление о решении.</p>
+    </section>
+
+    <!-- STAFF GUIDE -->
+    <section class="section" id="staff-guide">
+      <h2>👤 Руководство сотрудника</h2>
+      <div class="step">
+        <div class="step-num">1</div>
+        <div class="step-body">
+          <div class="step-title">Просмотр расписания</div>
+          <div class="step-text">После входа открывается раздел «Мой график». Навигация по неделям кнопками «Пред.» и «След.».</div>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num">2</div>
+        <div class="step-body">
+          <div class="step-title">Запрос изменения смены</div>
+          <div class="step-text">Нажмите «✏️ Запросить изменение» на нужной смене или «+ Запросить смену» для новой. Укажите желаемую дату, тип смены и причину. Заявка отправляется администратору.</div>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num">3</div>
+        <div class="step-body">
+          <div class="step-title">Ожидание решения</div>
+          <div class="step-text">Администратор рассмотрит заявку. Вы получите уведомление 🔔 с решением. Если отклонено — сотрудник может повторно запросить.</div>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num">4</div>
+        <div class="step-body">
+          <div class="step-title">Свободное время</div>
+          <div class="step-text">В разделе «Свободное время» укажите доступные часы, когда вы готовы работать вне основного расписания.</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- SCHEDULE -->
+    <section class="section" id="schedule">
+      <h2>📅 График смен</h2>
+      <h3>Типы смен</h3>
+      <p>По умолчанию созданы три типа смен:</p>
+      <table>
+        <tr><th>Название</th><th>Время</th><th>Цвет</th></tr>
+        <tr><td>Утренняя</td><td>08:00 – 14:00</td><td style="color:#10b981">● Зелёный</td></tr>
+        <tr><td>Дневная</td><td>14:00 – 20:00</td><td style="color:#3b82f6">● Синий</td></tr>
+        <tr><td>Ночная</td><td>20:00 – 08:00</td><td style="color:#8b5cf6">● Фиолетовый</td></tr>
+      </table>
+
+      <h3>Лимиты смен</h3>
+      <p>Раздел «Лимиты» — настройка максимального количества смен в неделю по ролям:</p>
+      <table>
+        <tr><th>Роль</th><th>По умолчанию</th></tr>
+        <tr><td>Администратор</td><td>99 (без ограничений)</td></tr>
+        <tr><td>Модератор</td><td>10</td></tr>
+        <tr><td>Оператор</td><td>6</td></tr>
+        <tr><td>Стажёр</td><td>4</td></tr>
+        <tr><td>Ученик</td><td>3</td></tr>
+      </table>
+    </section>
+
+    <!-- CHANGE REQUESTS -->
+    <section class="section" id="change-requests">
+      <h2>📋 Заявки на изменение смен</h2>
+      <p>Сотрудник не может самостоятельно изменить смену (особенно в пределах недели). Вместо этого он создаёт <strong>заявку на изменение</strong>.</p>
+
+      <h3>Типы заявок</h3>
+      <table>
+        <tr><th>Тип</th><th>Описание</th></tr>
+        <tr><td><code>edit</code></td><td>Изменение существующей смены (другой тип, время)</td></tr>
+        <tr><td><code>new</code></td><td>Запрос новой смены на определённую дату</td></tr>
+        <tr><td><code>delete</code></td><td>Запрос на удаление смены</td></tr>
+        <tr><td><code>custom</code></td><td>Произвольный запрос с комментарием</td></tr>
+      </table>
+
+      <h3>Жизненный цикл заявки</h3>
+      <div class="grid-2">
+        <div class="card">
+          <div class="card-title">1. Создание (pending)</div>
+          <div class="card-body">Сотрудник отправляет заявку. Администратор получает уведомление. В графике ячейка помечается «!».</div>
+        </div>
+        <div class="card">
+          <div class="card-title">2. Одобрение (approved)</div>
+          <div class="card-body">Администратор одобряет, при необходимости выбирает тип смены. Расписание обновляется автоматически. Сотрудник получает уведомление ✅.</div>
+        </div>
+        <div class="card">
+          <div class="card-title">2б. Отклонение (rejected)</div>
+          <div class="card-body">Администратор отклоняет с комментарием. Сотрудник получает уведомление ❌ и может повторно запросить.</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- NOTIFICATIONS -->
+    <section class="section" id="notifications">
+      <h2>🔔 Уведомления</h2>
+      <p>Система автоматически создаёт уведомления при ключевых событиях. Колокольчик в шапке показывает количество непрочитанных.</p>
+      <table>
+        <tr><th>Событие</th><th>Кому</th><th>Иконка</th></tr>
+        <tr><td>Заявка на изменение смены создана</td><td>Всем администраторам</td><td>⚠️</td></tr>
+        <tr><td>Заявка одобрена</td><td>Сотруднику</td><td>✅</td></tr>
+        <tr><td>Заявка отклонена</td><td>Сотруднику</td><td>❌</td></tr>
+        <tr><td>Смена назначена администратором</td><td>Сотруднику</td><td>📅</td></tr>
+        <tr><td>Смена удалена администратором</td><td>Сотруднику</td><td>⚠️</td></tr>
+        <tr><td>Неделя подтверждена</td><td>Всем сотрудникам недели</td><td>✅</td></tr>
+      </table>
+      <div class="alert alert-info">💡 Уведомления обновляются каждые 30 секунд автоматически.</div>
+    </section>
+
+    <!-- FREE TIME -->
+    <section class="section" id="free-time">
+      <h2>🕐 Свободное время</h2>
+      <p>Сотрудники могут указывать временные слоты, в которые они доступны для работы. Это помогает администратору при назначении смен.</p>
+      <h3>Поля записи</h3>
+      <table>
+        <tr><th>Поле</th><th>Описание</th></tr>
+        <tr><td>Дата</td><td>Конкретный день</td></tr>
+        <tr><td>Начало</td><td>Время начала доступности</td></tr>
+        <tr><td>Конец</td><td>Время окончания доступности</td></tr>
+        <tr><td>Тип</td><td>personal (по умолчанию) или другой произвольный тег</td></tr>
+      </table>
+    </section>
+
+    <!-- STATS -->
+    <section class="section" id="stats">
+      <h2>📊 Статистика</h2>
+      <p>Раздел «Статистика» доступен только администратору. Показывает количество смен на каждого сотрудника за выбранный месяц.</p>
+      <p>Данные обновляются при смене месяца. Учитываются все смены со статусом, отличным от «declined».</p>
+    </section>
+
+    <!-- API -->
+    <section class="section" id="api">
+      <h2>🔌 API эндпоинты</h2>
+      <div class="alert alert-info">Все запросы (кроме /login, /register) требуют заголовок: <code>Authorization: Bearer &lt;token&gt;</code></div>
+
+      <h3>Авторизация</h3>
+      <div class="api-endpoint"><span class="method m-post">POST</span><span class="endpoint-path">/api/login</span><span class="endpoint-desc">Вход в систему</span></div>
+      <div class="api-endpoint"><span class="method m-post">POST</span><span class="endpoint-path">/api/register</span><span class="endpoint-desc">Регистрация</span></div>
+      <div class="api-endpoint"><span class="method m-get">GET</span><span class="endpoint-path">/api/auth/me</span><span class="endpoint-desc">Текущий пользователь</span></div>
+
+      <h3>Сотрудники (admin only)</h3>
+      <div class="api-endpoint"><span class="method m-get">GET</span><span class="endpoint-path">/api/admin/employees</span><span class="endpoint-desc">Список сотрудников</span></div>
+      <div class="api-endpoint"><span class="method m-post">POST</span><span class="endpoint-path">/api/admin/employees</span><span class="endpoint-desc">Создать сотрудника</span></div>
+      <div class="api-endpoint"><span class="method m-put">PUT</span><span class="endpoint-path">/api/admin/employees/:id</span><span class="endpoint-desc">Обновить сотрудника</span></div>
+      <div class="api-endpoint"><span class="method m-delete">DELETE</span><span class="endpoint-path">/api/admin/employees/:id</span><span class="endpoint-desc">Удалить сотрудника</span></div>
+
+      <h3>График</h3>
+      <div class="api-endpoint"><span class="method m-post">POST</span><span class="endpoint-path">/api/schedule/all-schedules</span><span class="endpoint-desc">Все смены за период (admin)</span></div>
+      <div class="api-endpoint"><span class="method m-post">POST</span><span class="endpoint-path">/api/schedule/user-schedule</span><span class="endpoint-desc">Смены пользователя</span></div>
+      <div class="api-endpoint"><span class="method m-post">POST</span><span class="endpoint-path">/api/schedule/entries</span><span class="endpoint-desc">Создать смену</span></div>
+      <div class="api-endpoint"><span class="method m-put">PUT</span><span class="endpoint-path">/api/schedule/entries/:id</span><span class="endpoint-desc">Обновить смену (admin)</span></div>
+      <div class="api-endpoint"><span class="method m-post">POST</span><span class="endpoint-path">/api/schedule/delete-entry</span><span class="endpoint-desc">Удалить смену (admin)</span></div>
+
+      <h3>Заявки на изменение</h3>
+      <div class="api-endpoint"><span class="method m-post">POST</span><span class="endpoint-path">/api/schedule/change-requests</span><span class="endpoint-desc">Создать заявку</span></div>
+      <div class="api-endpoint"><span class="method m-get">GET</span><span class="endpoint-path">/api/schedule/change-requests</span><span class="endpoint-desc">Список заявок (admin)</span></div>
+      <div class="api-endpoint"><span class="method m-post">POST</span><span class="endpoint-path">/api/schedule/process-request</span><span class="endpoint-desc">Обработать заявку (admin)</span></div>
+
+      <h3>Уведомления</h3>
+      <div class="api-endpoint"><span class="method m-get">GET</span><span class="endpoint-path">/api/notifications</span><span class="endpoint-desc">Мои уведомления</span></div>
+      <div class="api-endpoint"><span class="method m-post">POST</span><span class="endpoint-path">/api/notifications/read</span><span class="endpoint-desc">Пометить прочитанными</span></div>
+    </section>
+
+    <!-- DATABASE -->
+    <section class="section" id="database">
+      <h2>🗄️ База данных</h2>
+      <table>
+        <tr><th>Таблица</th><th>Описание</th></tr>
+        <tr><td><code>users</code></td><td>Сотрудники системы</td></tr>
+        <tr><td><code>shift_types</code></td><td>Типы смен (утренняя, дневная и т.д.)</td></tr>
+        <tr><td><code>shift_entries</code></td><td>Назначенные смены сотрудникам</td></tr>
+        <tr><td><code>schedule_weeks</code></td><td>Недели расписания со статусом</td></tr>
+        <tr><td><code>change_requests</code></td><td>Заявки на изменение смен</td></tr>
+        <tr><td><code>notifications</code></td><td>Уведомления пользователей</td></tr>
+        <tr><td><code>free_time</code></td><td>Записи о свободном времени</td></tr>
+        <tr><td><code>shift_limits</code></td><td>Лимиты смен по ролям</td></tr>
+        <tr><td><code>work_logs</code></td><td>Лог событий системы</td></tr>
+      </table>
+    </section>
+
+    <!-- ENV -->
+    <section class="section" id="env">
+      <h2>🔧 Переменные окружения</h2>
+      <h3>backend/.env</h3>
+      <pre><code>PORT=3002
+DB_HOST=localhost
+DB_PORT=5432
+DB_NAME=call_center_mvp
+DB_USER=postgres
+DB_PASSWORD=your_password
+JWT_SECRET=your_very_long_secret_key
+CORS_ORIGIN=http://localhost:5173</code></pre>
+      <h3>frontend/.env</h3>
+      <pre><code>VITE_API_URL=http://localhost:3002/api
+VITE_KNOWLEDGE_URL=https://your-knowledge-base-url.com</code></pre>
+    </section>
+
+    <!-- FAQ -->
+    <section class="section" id="faq">
+      <h2>❓ FAQ</h2>
+
+      <div class="card" style="margin-bottom:12px">
+        <div class="card-title">Почему сотрудник не может изменить смену напрямую?</div>
+        <div class="card-body">По бизнес-логике, только администратор вправе финально редактировать расписание. Сотрудник подаёт заявку, администратор её рассматривает. Это исключает несогласованные изменения.</div>
+      </div>
+
+      <div class="card" style="margin-bottom:12px">
+        <div class="card-title">Как сбросить пароль сотруднику?</div>
+        <div class="card-body">Раздел «Сотрудники» → Редактировать сотрудника → кнопка «Сбросить пароль». После сброса пароль равен NULL, сотрудник должен зарегистрироваться заново через /register.</div>
+      </div>
+
+      <div class="card" style="margin-bottom:12px">
+        <div class="card-title">Как добавить новый тип смены?</div>
+        <div class="card-body">На данный момент через SQL или API: <code>POST /api/schedule/shift-types</code> с телом <code>{"name":"...", "start_time":"HH:MM", "end_time":"HH:MM", "color":"#hex"}</code></div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">Не пришли уведомления — что делать?</div>
+        <div class="card-body">Проверьте, что бэкенд запущен и доступен. Уведомления обновляются каждые 30 секунд. Убедитесь, что токен авторизации актуален (не истёк).</div>
+      </div>
+    </section>
+
+  </div><!-- /content -->
+
+  <footer>
+    <span>Колл-центр MVP — Документация v1.2.0</span>
+    <span>Backend: Node.js + Express | Frontend: React + TypeScript | DB: PostgreSQL</span>
+  </footer>
+
+</div><!-- /main -->
+</div><!-- /layout -->
+
+<script>
+// Highlight active nav link on scroll
+const links = document.querySelectorAll('.navLink');
+const observer = new IntersectionObserver((entries) => {
+  entries.forEach(e => {
+    if (e.isIntersecting) {
+      links.forEach(l => l.classList.remove('active'));
+      const link = document.querySelector(`.navLink[href="#${e.target.id}"]`);
+      if (link) link.classList.add('active');
+    }
+  });
+}, { threshold: 0.3 });
+document.querySelectorAll('section[id]').forEach(s => observer.observe(s));
+</script>
+</body>
+</html>

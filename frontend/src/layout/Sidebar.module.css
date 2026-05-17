@@ -1,0 +1,28 @@
+.aside {
+  width: 220px; flex-shrink: 0; background: #fff; border-right: 1px solid #e2e8f0;
+  display: flex; flex-direction: column; padding: 20px 0; gap: 0; height: 100%;
+}
+
+.nav { display: flex; flex-direction: column; gap: 4px; padding: 0 12px; flex: 1; }
+
+.link {
+  display: flex; align-items: center; gap: 10px; padding: 10px 12px;
+  border-radius: 10px; text-decoration: none; color: #475569;
+  font-size: 14px; font-weight: 500; transition: all .15s; position: relative;
+}
+.link:hover { background: #f1f5f9; color: #1e293b; }
+.active { background: #eff6ff !important; color: #6366f1 !important; font-weight: 700; }
+
+.ico { font-size: 16px; width: 20px; text-align: center; }
+
+.navBadge {
+  margin-left: auto; background: #ef4444; color: #fff; border-radius: 99px;
+  font-size: 11px; font-weight: 700; padding: 1px 6px; min-width: 18px; text-align: center;
+}
+
+.hint {
+  margin: 12px; padding: 12px; background: #f8fafc; border-radius: 10px;
+  border: 1px solid #e2e8f0;
+}
+.hintTitle { font-size: 12px; font-weight: 700; color: #1e293b; margin: 0 0 4px; }
+.hintText { font-size: 11px; color: #64748b; margin: 0; line-height: 1.5; }
