@@ -1,219 +1,192 @@
 import { useMemo, useState } from 'react';
-import { useForm, Controller } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { z } from 'zod';
+import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import {
-  useCreateEmployeeMutation,
-  useDeleteEmployeeMutation,
-  useEmployeesQuery,
-  useUpdateEmployeeMutation,
+  useEmployeesQuery, useCreateEmployeeMutation, useUpdateEmployeeMutation,
+  useDeleteEmployeeMutation, useResetPasswordMutation, useSetModeratorStaffMutation,
 } from '../../api/api';
 import type { User, UserRole } from '../../api/types';
-import { DataTable, type Column } from '../../components/common/DataTable';
 import { Button } from '../../components/common/Button';
 import { Modal } from '../../components/common/Modal';
-import { Input } from '../../components/common/Input';
-import { Select, type SelectOption } from '../../components/common/Select';
 import styles from './UsersTab.module.css';
+import { useAuth } from '../../hooks/useAuth';
 
-const roles: SelectOption[] = [
-  { value: 'admin', label: 'Администратор' },
-  { value: 'moderator', label: 'Модератор' },
-  { value: 'operator', label: 'Оператор' },
-  { value: 'stajer', label: 'Стажёр' },
-  { value: 'uchenik', label: 'Ученик' },
+function apiMessage(error: unknown, fallback: string) {
+  if (error && typeof error === 'object' && 'data' in error) {
+    const data = error.data;
+    if (data && typeof data === 'object' && 'message' in data) return String(data.message);
+  }
+  return fallback;
+}
+
+const ALL_ROLES: {value:UserRole;label:string}[] = [
+  {value:'admin',label:'Администратор'},{value:'moderator',label:'Модератор'},
+  {value:'operator',label:'Оператор'},{value:'stajer',label:'Стажёр'},{value:'uchenik',label:'Ученик'},
 ];
+const STAFF_ROLES = ALL_ROLES.filter(r => !['admin','moderator'].includes(r.value));
 
-const baseSchema = z.object({
-  fio: z.string().min(2, 'Минимум 2 символа'),
-  role: z.enum(['admin', 'moderator', 'operator', 'stajer', 'uchenik']),
-  username: z.string().optional(),
-  password: z.string().optional(),
-  status: z.boolean().optional(),
-});
+const roleBg: Record<string,string> = {
+  admin:'#fee2e2|#991b1b', moderator:'#fef3c7|#92400e',
+  operator:'#dbeafe|#1e40af', stajer:'#d1fae5|#065f46', uchenik:'#ede9fe|#5b21b6',
+};
 
-type FormValues = z.infer<typeof baseSchema>;
+function RolePill({ role }: { role: string }) {
+  const [bg,color] = (roleBg[role]||'#f1f5f9|#475569').split('|');
+  return <span style={{background:bg,color,padding:'2px 10px',borderRadius:20,fontSize:12,fontWeight:600}}>{ALL_ROLES.find(r=>r.value===role)?.label||role}</span>;
+}
 
 export function UsersTab() {
-  const { data = [], isLoading, isFetching } = useEmployeesQuery();
-  const [createEmp] = useCreateEmployeeMutation();
-  const [updateEmp] = useUpdateEmployeeMutation();
-  const [deleteEmp] = useDeleteEmployeeMutation();
+  const { role: myRole, userId } = useAuth();
+  const isAdmin = myRole === 'admin';
+  const navigate = useNavigate();
 
-  const [open, setOpen] = useState(false);
-  const [editing, setEditing] = useState<User | null>(null);
+  const [statusFilter, setStatusFilter] = useState<'active'|'inactive'|'all'>('active');
+  const [filterRole, setFilterRole]   = useState('');
+  const [search, setSearch]           = useState('');
 
-  const schema = useMemo(() => {
-    return baseSchema.superRefine((val, ctx) => {
-      if (!editing && val.password && val.password.length > 0 && val.password.length < 6) {
-        ctx.addIssue({ code: 'custom', path: ['password'], message: 'Минимум 6 символов' });
-      }
-    });
-  }, [editing]);
+  const { data: employees = [], isLoading, refetch } = useEmployeesQuery({ status: statusFilter });
+  const [createEmp]    = useCreateEmployeeMutation();
+  const [updateEmp]    = useUpdateEmployeeMutation();
+  const [deleteEmp]    = useDeleteEmployeeMutation();
+  const [resetPwd]     = useResetPasswordMutation();
+  const [setModerators] = useSetModeratorStaffMutation();
 
-  const form = useForm<FormValues>({
-    resolver: zodResolver(schema),
-    defaultValues: { fio: '', role: 'operator', username: '', password: '', status: true },
-  });
+  const moderators = useMemo(() => employees.filter(u => u.role==='moderator'), [employees]);
 
-  const openCreate = () => {
-    setEditing(null);
-    form.reset({ fio: '', role: 'operator', username: '', password: '', status: true });
-    setOpen(true);
-  };
+  const filtered = useMemo(() => employees.filter(u => {
+    if (filterRole && u.role!==filterRole) return false;
+    const q = search.toLowerCase();
+    return !q || u.fio.toLowerCase().includes(q) || (u.username||'').toLowerCase().includes(q);
+  }), [employees, filterRole, search]);
 
-  const openEdit = (u: User) => {
-    setEditing(u);
-    form.reset({
-      fio: u.fio,
-      role: u.role,
-      username: u.username ?? '',
-      password: '',
-      status: u.status,
-    });
-    setOpen(true);
-  };
+  const [open, setOpen]       = useState(false);
+  const [editing, setEditing] = useState<User|null>(null);
+  const [form, setForm]       = useState({ fio:'', role:'operator' as UserRole, username:'', password:'', status:true });
+  const [modModal, setModModal] = useState<User|null>(null);
+  const [selMods, setSelMods]   = useState<number[]>([]);
 
-  const onSubmit = async (v: FormValues) => {
+  const openCreate = () => { setEditing(null); setForm({fio:'',role:'operator',username:'',password:'',status:true}); setOpen(true); };
+  const openEdit   = (u: User) => { setEditing(u); setForm({fio:u.fio,role:u.role,username:u.username||'',password:'',status:u.status}); setOpen(true); };
+  const openMods   = (u: User) => { setModModal(u); setSelMods((u.moderators||[]).map(m=>m.id)); };
+
+  const save = async () => {
+    if (!form.fio.trim()) { toast.error('Введите ФИО'); return; }
     try {
-      if (editing) {
-        await updateEmp({
-          id: editing.id,
-          body: {
-            fio: v.fio,
-            role: v.role as UserRole,
-            status: v.status ?? true,
-            username: v.username || null,
-          },
-        }).unwrap();
-        toast.success('Сотрудник обновлён');
-      } else {
-        await createEmp({
-          fio: v.fio,
-          role: v.role as UserRole,
-          status: v.status ?? true,
-          username: v.username || undefined,
-          password: v.password || undefined,
-        }).unwrap();
-        toast.success('Сотрудник создан');
-      }
-      setOpen(false);
-    } catch (e: unknown) {
-      const msg =
-        typeof e === 'object' && e && 'data' in e
-          ? String((e as { data?: { message?: string } }).data?.message ?? 'Ошибка')
-          : 'Ошибка';
-      toast.error(msg);
-    }
+      if (editing) await updateEmp({ id:editing.id, body:{ fio:form.fio, role:form.role, status:form.status, username:form.username||null } }).unwrap();
+      else await createEmp({ fio:form.fio, role:form.role, status:form.status, username:form.username||undefined, password:form.password||undefined }).unwrap();
+      toast.success(editing?'Обновлено':'Создан'); setOpen(false);
+    } catch(e: unknown) { toast.error(apiMessage(e, 'Ошибка')); }
   };
 
-  const onDelete = async (u: User) => {
+  const doReset = async (u: User) => {
+    if (!window.confirm(`Сбросить пароль ${u.fio}?`)) return;
+    try { await resetPwd(u.id).unwrap(); toast.success('Пароль сброшен'); }
+    catch { toast.error('Ошибка'); }
+  };
+
+  const doDelete = async (u: User) => {
     if (!window.confirm(`Удалить ${u.fio}?`)) return;
-    try {
-      await deleteEmp(u.id).unwrap();
-      toast.success('Удалено');
-    } catch {
-      toast.error('Не удалось удалить');
-    }
+    try { await deleteEmp(u.id).unwrap(); toast.success('Удалён'); }
+    catch { toast.error('Ошибка'); }
   };
 
-  const columns: Column<User>[] = [
-    { key: 'fio', header: 'Имя', render: (r) => <span className={styles.strong}>{r.fio}</span> },
-    { key: 'user', header: 'Логин', render: (r) => r.username || '—' },
-    { key: 'role', header: 'Роль', render: (r) => <span className={styles.pill}>{r.role}</span> },
-    {
-      key: 'status',
-      header: 'Статус',
-      render: (r) => (
-        <span className={r.status ? styles.ok : styles.off}>
-          {r.status ? 'Активен' : 'Неактивен'}
-        </span>
-      ),
-    },
-    {
-      key: 'actions',
-      header: '',
-      width: '200px',
-      render: (r) => (
-        <div className={styles.row}>
-          <Button variant="secondary" onClick={() => openEdit(r)}>
-            Редактировать
-          </Button>
-          <Button variant="danger" onClick={() => onDelete(r)}>
-            Удалить
-          </Button>
-        </div>
-      ),
-    },
-  ];
+  const saveMods = async () => {
+    if (!modModal) return;
+    try { await setModerators({ staffId:modModal.id, moderator_ids:selMods }).unwrap(); toast.success('Обновлено'); setModModal(null); void refetch(); }
+    catch { toast.error('Ошибка'); }
+  };
+
+  const roleOptions = isAdmin ? ALL_ROLES : STAFF_ROLES;
 
   return (
     <div className={styles.page}>
       <div className={styles.head}>
-        <div>
-          <h1 className={styles.title}>Сотрудники</h1>
-          <p className={styles.sub}>Управление аккаунтами, ролями и доступом к платформе.</p>
+        <div><h1 className={styles.title}>Сотрудники</h1><p className={styles.sub}>Нажмите на строку для просмотра профиля</p></div>
+        <Button onClick={openCreate}>+ Новый сотрудник</Button>
+      </div>
+
+      <div className={styles.filters}>
+        <input className={styles.search} placeholder="Поиск по имени / логину…" value={search} onChange={e => setSearch(e.target.value)} />
+        <select className={styles.sel} value={filterRole} onChange={e => setFilterRole(e.target.value)}>
+          <option value="">Все роли</option>
+          {ALL_ROLES.map(r => <option key={r.value} value={r.value}>{r.label}</option>)}
+        </select>
+        <div className={styles.statusTabs}>
+          {(['active','inactive','all'] as const).map(s => (
+            <button key={s} type="button" className={[styles.stab, statusFilter===s?styles.stabActive:''].join(' ')} onClick={() => setStatusFilter(s)}>
+              {s==='active'?'Активные':s==='inactive'?'Скрытые':'Все'}
+            </button>
+          ))}
         </div>
-        <Button onClick={openCreate}>Новый сотрудник</Button>
+        <Button variant="secondary" size="sm" onClick={() => void refetch()} loading={isLoading}>↻</Button>
       </div>
 
-      <div className={styles.card}>
-        {isLoading || isFetching ? <p className={styles.muted}>Загрузка…</p> : null}
-        <DataTable columns={columns} rows={data} rowKey={(r) => r.id} />
+      <div className={styles.tableWrap}>
+        <table className={styles.table}>
+          <thead><tr><th>Сотрудник</th><th>Логин</th><th>Роль</th><th>Модераторы</th><th>Статус</th><th></th></tr></thead>
+          <tbody>
+            {filtered.length===0 && <tr><td colSpan={6} className={styles.empty}>Нет сотрудников</td></tr>}
+            {filtered.map(u => (
+              <tr key={u.id} className={styles.clickableRow} onClick={() => navigate(`/admin/employees/${u.id}`)}>
+                <td><span className={styles.fio}>{u.fio}</span></td>
+                <td className={styles.muted}>{u.username||'—'}</td>
+                <td><RolePill role={u.role} /></td>
+                <td>
+                  <div className={styles.modList} onClick={e => e.stopPropagation()}>
+                    {(u.moderators||[]).length===0 ? <span className={styles.muted}>—</span>
+                      : (u.moderators||[]).map(m => <span key={m.id} className={styles.modChip}>{m.fio}</span>)}
+                    {isAdmin && <button type="button" className={styles.modBtn} onClick={e => { e.stopPropagation(); openMods(u); }}>✏️</button>}
+                  </div>
+                </td>
+                <td><span className={u.status?styles.statusOn:styles.statusOff}>{u.status?'Активен':'Неактивен'}</span></td>
+                <td onClick={e => e.stopPropagation()}>
+                  <div className={styles.actions}>
+                    <Button size="sm" variant="secondary" onClick={() => openEdit(u)}>Ред.</Button>
+                    {isAdmin && <Button size="sm" variant="secondary" onClick={() => doReset(u)}>Сброс пароля</Button>}
+                    {isAdmin && u.id !== userId && <Button size="sm" variant="danger" onClick={() => doDelete(u)}>Удалить</Button>}
+                  </div>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
       </div>
 
-      <Modal
-        open={open}
-        onClose={() => setOpen(false)}
-        title={editing ? 'Редактирование сотрудника' : 'Новый сотрудник'}
-        footer={
-          <>
-            <Button variant="secondary" type="button" onClick={() => setOpen(false)}>
-              Отмена
-            </Button>
-            <Button type="submit" form="emp-form">
-              Сохранить
-            </Button>
-          </>
-        }
+      <Modal open={open} onClose={() => setOpen(false)} title={editing?'Редактировать':'Новый сотрудник'}
+        footer={<><Button variant="secondary" onClick={() => setOpen(false)}>Отмена</Button><Button onClick={() => void save()}>Сохранить</Button></>}
       >
-        <form id="emp-form" className={styles.form} onSubmit={form.handleSubmit(onSubmit)}>
-          <Input label="Полное имя" {...form.register('fio')} error={form.formState.errors.fio?.message} />
-          <Input
-            label="Логин (опционально)"
-            {...form.register('username')}
-            error={form.formState.errors.username?.message}
-          />
-          <Select
-            label="Роль"
-            options={roles}
-            {...form.register('role')}
-            error={form.formState.errors.role?.message}
-          />
-          {!editing ? (
-            <Input
-              label="Начальный пароль (опционально)"
-              type="password"
-              {...form.register('password')}
-              error={form.formState.errors.password?.message}
-            />
-          ) : null}
-          <label className={styles.check}>
-            <Controller
-              name="status"
-              control={form.control}
-              render={({ field }) => (
-                <input
-                  type="checkbox"
-                  checked={!!field.value}
-                  onChange={(e) => field.onChange(e.target.checked)}
-                />
-              )}
-            />
-            Активный аккаунт
-          </label>
-        </form>
+        <div className={styles.form}>
+          <div className={styles.field}><label className={styles.label}>ФИО *</label>
+            <input className={styles.input} value={form.fio} onChange={e => setForm(f=>({...f,fio:e.target.value}))}
+              onKeyDown={e => { if (e.key === 'Enter') void save(); }} /></div>
+          <div className={styles.field}><label className={styles.label}>Логин</label>
+            <input className={styles.input} value={form.username} onChange={e => setForm(f=>({...f,username:e.target.value}))}
+              onKeyDown={e => { if (e.key === 'Enter') void save(); }} /></div>
+          <div className={styles.field}><label className={styles.label}>Роль *</label>
+            <select className={styles.input} value={form.role} onChange={e => setForm(f=>({...f,role:e.target.value as UserRole}))}>
+              {roleOptions.map(r => <option key={r.value} value={r.value}>{r.label}</option>)}
+            </select></div>
+          {!editing && <div className={styles.field}><label className={styles.label}>Пароль (если пусто — сотрудник зарегистрируется сам)</label>
+            <input className={styles.input} type="password" value={form.password} onChange={e => setForm(f=>({...f,password:e.target.value}))}
+              onKeyDown={e => { if (e.key === 'Enter') void save(); }} /></div>}
+          <label className={styles.checkRow}><input type="checkbox" checked={form.status} onChange={e => setForm(f=>({...f,status:e.target.checked}))} /> Активный аккаунт</label>
+        </div>
+      </Modal>
+
+      <Modal open={Boolean(modModal)} onClose={() => setModModal(null)} title={`Модераторы: ${modModal?.fio}`}
+        footer={<><Button variant="secondary" onClick={() => setModModal(null)}>Отмена</Button><Button onClick={() => void saveMods()}>Сохранить</Button></>}
+      >
+        <div className={styles.modModalBody}>
+          <p className={styles.modHint}>Выберите модераторов (можно несколько):</p>
+          {moderators.length===0 && <p className={styles.muted}>Нет модераторов в системе</p>}
+          {moderators.map(m => (
+            <label key={m.id} className={styles.modCheckRow}>
+              <input type="checkbox" checked={selMods.includes(m.id)} onChange={() => setSelMods(prev => prev.includes(m.id)?prev.filter(x=>x!==m.id):[...prev,m.id])} />
+              <span>{m.fio}</span>
+              {m.username && <span className={styles.muted}>@{m.username}</span>}
+            </label>
+          ))}
+        </div>
       </Modal>
     </div>
   );

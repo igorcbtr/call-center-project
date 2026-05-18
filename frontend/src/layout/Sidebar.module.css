@@ -1,28 +1,169 @@
 .aside {
-  width: 220px; flex-shrink: 0; background: #fff; border-right: 1px solid #e2e8f0;
-  display: flex; flex-direction: column; padding: 20px 0; gap: 0; height: 100%;
+  width: 224px;
+  flex-shrink: 0;
+  background: #fff;
+  border-right: 1px solid #e2e8f0;
+  display: flex;
+  flex-direction: column;
+  padding: 0;
+  height: 100%;
+  transition: width .2s ease;
+  position: relative;
+  overflow: hidden;
 }
 
-.nav { display: flex; flex-direction: column; gap: 4px; padding: 0 12px; flex: 1; }
+.collapsed {
+  width: 60px;
+}
+
+.collapseBtn {
+  position: absolute;
+  top: 12px;
+  right: 8px;
+  background: #f1f5f9;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  width: 22px;
+  height: 22px;
+  font-size: 14px;
+  cursor: pointer;
+  color: #64748b;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10;
+  transition: background .15s;
+  padding: 0;
+}
+.collapseBtn:hover { background: #e2e8f0; color: #1e293b; }
+
+.userBadge {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 16px 14px;
+  border-bottom: 1px solid #f1f5f9;
+  background: #f8fafc;
+  min-height: 68px;
+}
+
+.userAvatar {
+  width: 36px;
+  height: 36px;
+  background: linear-gradient(135deg, #6366f1, #8b5cf6);
+  border-radius: 50%;
+  color: #fff;
+  font-weight: 800;
+  font-size: 15px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.userInfo { display: flex; flex-direction: column; min-width: 0; }
+.userName { font-size: 13px; font-weight: 700; color: #1e293b; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.userRole { font-size: 11px; color: #94a3b8; }
+
+.nav {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 12px 8px;
+  flex: 1;
+  overflow-y: auto;
+}
 
 .link {
-  display: flex; align-items: center; gap: 10px; padding: 10px 12px;
-  border-radius: 10px; text-decoration: none; color: #475569;
-  font-size: 14px; font-weight: 500; transition: all .15s; position: relative;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 10px;
+  border-radius: 10px;
+  text-decoration: none;
+  color: #475569;
+  font-size: 14px;
+  font-weight: 500;
+  transition: all .15s;
+  position: relative;
+  white-space: nowrap;
 }
 .link:hover { background: #f1f5f9; color: #1e293b; }
 .active { background: #eff6ff !important; color: #6366f1 !important; font-weight: 700; }
 
-.ico { font-size: 16px; width: 20px; text-align: center; }
+.ico { font-size: 16px; width: 20px; text-align: center; flex-shrink: 0; }
+.linkLabel { flex: 1; overflow: hidden; text-overflow: ellipsis; }
 
-.navBadge {
-  margin-left: auto; background: #ef4444; color: #fff; border-radius: 99px;
-  font-size: 11px; font-weight: 700; padding: 1px 6px; min-width: 18px; text-align: center;
+.badge {
+  background: #ef4444;
+  color: #fff;
+  border-radius: 99px;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 1px 7px;
+  min-width: 18px;
+  text-align: center;
+}
+
+.badgeDot {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  width: 8px;
+  height: 8px;
+  background: #ef4444;
+  border-radius: 50%;
 }
 
 .hint {
-  margin: 12px; padding: 12px; background: #f8fafc; border-radius: 10px;
+  margin: 0 8px 12px;
+  padding: 12px;
+  background: #f8fafc;
+  border-radius: 10px;
   border: 1px solid #e2e8f0;
 }
 .hintTitle { font-size: 12px; font-weight: 700; color: #1e293b; margin: 0 0 4px; }
 .hintText { font-size: 11px; color: #64748b; margin: 0; line-height: 1.5; }
+
+/* Mobile: sidebar becomes bottom nav or hidden */
+@media (max-width: 768px) {
+  .aside {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    width: 100% !important;
+    height: auto;
+    border-right: none;
+    border-top: 1px solid #e2e8f0;
+    z-index: 100;
+    flex-direction: row;
+    padding: 0;
+    overflow: visible;
+  }
+  .collapsed { width: 100% !important; }
+  .collapseBtn { display: none; }
+  .userBadge { display: none; }
+  .hint { display: none; }
+  .nav {
+    flex-direction: row;
+    padding: 6px 8px;
+    gap: 2px;
+    overflow-x: auto;
+    overflow-y: visible;
+    justify-content: space-around;
+    width: 100%;
+  }
+  .link {
+    flex-direction: column;
+    gap: 2px;
+    padding: 6px 8px;
+    font-size: 10px;
+    min-width: 52px;
+    text-align: center;
+    border-radius: 8px;
+  }
+  .ico { font-size: 20px; width: auto; }
+  .linkLabel { font-size: 10px; }
+  .badge { position: absolute; top: 2px; right: 2px; font-size: 9px; padding: 1px 4px; }
+}

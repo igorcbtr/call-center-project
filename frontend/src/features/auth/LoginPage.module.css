@@ -1,110 +1,169 @@
-.page {
+.wrap {
   min-height: 100vh;
   display: flex;
   align-items: stretch;
-  justify-content: center;
-  background:
-    radial-gradient(1200px 600px at 10% -10%, rgba(14, 165, 233, 0.2), transparent),
-    radial-gradient(900px 500px at 90% 10%, rgba(13, 148, 136, 0.18), transparent),
-    linear-gradient(180deg, #f8fafc 0%, #e2e8f0 100%);
-  padding: 1.5rem;
+  background: linear-gradient(180deg, #f8fafc 0%, #e2e8f0 100%);
 }
 
-.panel {
-  width: min(1040px, 100%);
-  display: grid;
-  grid-template-columns: 1.1fr 0.9fr;
-  background: var(--color-surface);
-  border-radius: var(--radius-xl);
-  overflow: hidden;
-  box-shadow: var(--shadow-lg);
-  border: 1px solid var(--color-border);
-}
-
-.hero {
-  background: linear-gradient(145deg, #0b1220 0%, #0f2847 55%, #0d9488 160%);
+.left {
+  flex: 1.1;
+  background: linear-gradient(145deg, #0b1220 0%, #0f2847 55%, #0d3460 100%);
   color: #e0f2fe;
-  padding: 2.5rem 2rem;
+  padding: 48px 40px;
   display: flex;
   align-items: center;
+  min-height: 100vh;
 }
 
-.heroInner {
-  max-width: 420px;
+.leftContent {
+  max-width: 440px;
 }
 
-.kicker {
-  margin: 0 0 0.75rem;
-  font-size: var(--text-xs);
+.logo {
+  width: 48px;
+  height: 48px;
+  background: linear-gradient(135deg, #6366f1, #8b5cf6);
+  border-radius: 14px;
+  color: #fff;
+  font-weight: 900;
+  font-size: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 24px;
+}
+
+.badge {
+  font-size: 11px;
   font-weight: 700;
   letter-spacing: 0.12em;
   text-transform: uppercase;
   color: #7dd3fc;
+  margin-bottom: 16px;
 }
 
-.heroTitle {
-  margin: 0 0 0.75rem;
-  font-size: clamp(1.5rem, 2.4vw, 2rem);
+.hero {
+  font-size: clamp(1.6rem, 2.5vw, 2.2rem);
   font-weight: 800;
-  letter-spacing: -0.03em;
   color: #fff;
+  margin: 0 0 16px;
+  line-height: 1.2;
 }
 
-.heroLead {
-  margin: 0 0 1.25rem;
-  font-size: var(--text-sm);
-  line-height: 1.6;
+.heroSub {
+  font-size: 15px;
   color: #cbd5e1;
+  line-height: 1.6;
+  margin: 0 0 24px;
 }
 
-.list {
+.features {
   margin: 0;
-  padding-left: 1.1rem;
-  font-size: var(--text-sm);
+  padding-left: 18px;
   color: #e2e8f0;
-  line-height: 1.65;
+  font-size: 14px;
+  line-height: 1.9;
 }
 
-.formSection {
+.right {
+  flex: 0.9;
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 2rem 1.5rem;
-  background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
+  padding: 40px 32px;
+  background: #fff;
 }
 
-.formCard {
-  width: min(100%, 380px);
-}
-
-.formTitle {
-  margin: 0 0 0.35rem;
-  font-size: var(--text-xl);
-}
-
-.formHint {
-  margin: 0 0 1.25rem;
-  font-size: var(--text-xs);
-  color: var(--color-text-muted);
-}
-
-.form {
+.card {
+  width: 100%;
+  max-width: 360px;
   display: flex;
   flex-direction: column;
-  gap: 1rem;
+  gap: 16px;
 }
 
-.submit {
+.title {
+  font-size: 22px;
+  font-weight: 800;
+  color: #1e293b;
+  margin: 0 0 4px;
+}
+
+.sub {
+  font-size: 13px;
+  color: #64748b;
+  margin: 0;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.label {
+  font-size: 13px;
+  font-weight: 600;
+  color: #374151;
+}
+
+.input {
+  padding: 10px 14px;
+  border: 1.5px solid #e2e8f0;
+  border-radius: 10px;
+  font-size: 15px;
+  outline: none;
+  transition: border-color 0.15s;
+  background: #f8fafc;
   width: 100%;
-  margin-top: 0.25rem;
+  box-sizing: border-box;
 }
 
-@media (max-width: 860px) {
-  .panel {
-    grid-template-columns: 1fr;
-  }
+.input:focus {
+  border-color: #6366f1;
+  background: #fff;
+}
 
-  .hero {
-    padding: 1.75rem 1.5rem;
-  }
+.btn {
+  padding: 12px;
+  background: linear-gradient(135deg, #6366f1, #8b5cf6);
+  color: #fff;
+  border: none;
+  border-radius: 10px;
+  font-size: 15px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: opacity 0.15s;
+  margin-top: 4px;
+}
+
+.btn:hover:not(:disabled) { opacity: 0.9; }
+.btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+.hint {
+  font-size: 12px;
+  color: #94a3b8;
+  text-align: center;
+  margin: 0;
+}
+
+.link { color: #6366f1; }
+
+@media (max-width: 768px) {
+  .wrap { flex-direction: column; }
+  .left { min-height: auto; padding: 32px 24px; }
+  .right { padding: 32px 24px; }
+}
+
+.infoBox {
+  background: #eff6ff;
+  border: 1px solid #c7d2fe;
+  border-radius: 10px;
+  padding: 12px 14px;
+}
+.infoText {
+  font-size: 12px;
+  color: #3730a3;
+  margin: 0;
+  line-height: 1.5;
 }

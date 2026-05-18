@@ -1,0 +1,64 @@
+.page { display: flex; flex-direction: column; gap: 24px; }
+.head { display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 16px; }
+.title { font-size: 24px; font-weight: 700; color: #1e293b; margin: 0 0 4px; }
+.sub { font-size: 13px; color: #64748b; margin: 0; }
+.controls { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+.dateInput {
+  padding: 8px 12px; border: 1.5px solid #e2e8f0; border-radius: 10px;
+  font-size: 14px; outline: none; background: #fff; cursor: pointer;
+}
+.dateInput:focus { border-color: #6366f1; }
+.refreshBtn {
+  padding: 8px 16px; background: #eff6ff; color: #6366f1;
+  border: 1px solid #c7d2fe; border-radius: 10px; font-size: 14px;
+  font-weight: 600; cursor: pointer; transition: background .15s;
+}
+.refreshBtn:hover { background: #6366f1; color: #fff; }
+
+.summary { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 12px; }
+.summaryCard { background: #fff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 16px; text-align: center; }
+.summaryNum { display: block; font-size: 28px; font-weight: 800; }
+.summaryLabel { display: block; font-size: 12px; color: #94a3b8; margin-top: 4px; }
+
+.empty { text-align: center; padding: 48px; color: #94a3b8; font-size: 14px; }
+.emptyState { text-align: center; padding: 48px 24px; }
+.emptyIcon { font-size: 48px; margin-bottom: 12px; }
+.emptyText { font-size: 16px; font-weight: 600; color: #475569; margin: 0 0 4px; }
+.emptyHint { font-size: 13px; color: #94a3b8; margin: 0; }
+
+.section { display: flex; flex-direction: column; gap: 14px; }
+.secTitle { font-size: 16px; font-weight: 700; color: #1e293b; margin: 0; }
+
+.userCards { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 12px; }
+.userCard { background: #fff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 16px; display: flex; flex-direction: column; gap: 10px; }
+.userCardTop { display: flex; align-items: center; gap: 10px; }
+.userAvatar { width: 36px; height: 36px; background: linear-gradient(135deg, #6366f1, #8b5cf6); border-radius: 50%; color: #fff; font-weight: 700; font-size: 15px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+.userInfo { flex: 1; min-width: 0; }
+.userName { font-size: 14px; font-weight: 700; color: #1e293b; display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.userRole { font-size: 11px; color: #94a3b8; }
+.presenceBadge { padding: 3px 10px; border-radius: 20px; font-size: 12px; font-weight: 600; white-space: nowrap; flex-shrink: 0; }
+.userEvents { display: flex; flex-direction: column; gap: 4px; }
+.eventRow { display: flex; align-items: center; gap: 8px; font-size: 13px; padding: 4px 0; border-bottom: 1px solid #f1f5f9; }
+.eventRow:last-child { border-bottom: none; }
+.eventType { font-weight: 600; min-width: 80px; }
+.eventTime { color: #475569; font-weight: 600; }
+.eventPlace { color: #94a3b8; font-size: 12px; margin-left: auto; }
+
+.tableWrap { background: #fff; border: 1px solid #e2e8f0; border-radius: 12px; overflow: hidden; }
+.table { width: 100%; border-collapse: collapse; }
+.table th { background: #f8fafc; padding: 10px 14px; font-size: 12px; font-weight: 700; color: #64748b; text-align: left; border-bottom: 1px solid #e2e8f0; text-transform: uppercase; }
+.table td { padding: 10px 14px; border-bottom: 1px solid #f1f5f9; font-size: 14px; }
+.table tbody tr:last-child td { border-bottom: none; }
+.table tbody tr:hover td { background: #f8fafc; }
+.timeCell { font-weight: 600; color: #1e293b; white-space: nowrap; }
+.nameCell { font-weight: 600; color: #1e293b; }
+.placeCell { color: #64748b; font-size: 13px; }
+
+@media (max-width: 768px) {
+  .head { flex-direction: column; }
+  .controls { width: 100%; }
+  .dateInput { flex: 1; }
+  .userCards { grid-template-columns: 1fr; }
+  .tableWrap { overflow-x: auto; }
+  .table { min-width: 500px; }
+}

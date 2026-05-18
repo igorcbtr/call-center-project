@@ -1,36 +1,105 @@
-.page { display: flex; flex-direction: column; gap: 24px; }
-.head { display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 16px; }
-.title { font-size: 24px; font-weight: 700; color: #1e293b; margin: 0 0 4px; }
-.sub { font-size: 14px; color: #64748b; margin: 0; }
-.weekNav { display: flex; align-items: center; gap: 12px; }
-.weekLabel { font-weight: 600; font-size: 14px; white-space: nowrap; color: #1e293b; }
-.stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 12px; }
-.statCard { background: #fff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 16px; text-align: center; }
-.statNum { display: block; font-size: 28px; font-weight: 800; color: #6366f1; }
-.statLabel { font-size: 12px; color: #94a3b8; margin-top: 4px; }
-.toolbar { display: flex; gap: 10px; flex-wrap: wrap; }
-.section { background: #fff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 20px; }
-.sectionTitle { font-size: 16px; font-weight: 700; color: #1e293b; margin: 0 0 16px; }
-.empty { color: #94a3b8; font-size: 14px; padding: 20px 0; text-align: center; }
-.shiftList { display: flex; flex-direction: column; gap: 12px; }
-.shiftCard { border-left: 4px solid #6366f1; background: #f8fafc; border-radius: 8px; padding: 14px 16px; display: flex; flex-direction: column; gap: 6px; }
-.shiftDate { font-size: 13px; color: #64748b; text-transform: capitalize; }
-.shiftName { font-size: 16px; font-weight: 700; }
-.shiftTime { font-size: 14px; color: #475569; }
-.shiftStatus { font-size: 13px; }
-.shiftComment { font-size: 12px; color: #94a3b8; font-style: italic; }
-.shiftActions { margin-top: 4px; }
-.ftList { display: flex; flex-direction: column; gap: 8px; margin-top: 12px; }
-.ftCard { display: flex; align-items: center; gap: 12px; padding: 10px 14px; background: #f8fafc; border-radius: 8px; border: 1px solid #e2e8f0; }
-.ftDate { font-weight: 600; font-size: 14px; color: #1e293b; min-width: 90px; }
-.ftTime { font-size: 13px; color: #475569; }
-.ftKind { font-size: 12px; color: #6366f1; background: #eff6ff; padding: 2px 8px; border-radius: 20px; margin-left: auto; }
-.ftDelete { background: none; border: none; cursor: pointer; color: #ef4444; font-size: 18px; padding: 0 4px; border-radius: 4px; }
-.ftDelete:hover { background: #fee2e2; }
-.crForm { display: flex; flex-direction: column; gap: 14px; }
-.crLabel { display: block; font-size: 13px; font-weight: 500; color: #475569; margin-bottom: 4px; }
-.crInput { width: 100%; padding: 8px 12px; border: 1px solid #e2e8f0; border-radius: 8px; font-size: 14px; outline: none; box-sizing: border-box; }
-.crInput:focus { border-color: #6366f1; }
-.crTextarea { width: 100%; padding: 8px 12px; border: 1px solid #e2e8f0; border-radius: 8px; font-size: 14px; outline: none; resize: vertical; font-family: inherit; box-sizing: border-box; }
-.crTextarea:focus { border-color: #6366f1; }
-.crHint { font-size: 12px; color: #92400e; background: #fffbeb; border: 1px solid #fde68a; border-radius: 8px; padding: 8px 12px; margin: 0; }
+.page{display:flex;flex-direction:column;gap:20px}
+.head{display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:16px}
+.title{font-size:24px;font-weight:700;color:#1e293b;margin:0 0 4px}
+.sub{font-size:14px;color:#64748b;margin:0}
+.nav{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.monthLabel{font-weight:700;font-size:15px;color:#1e293b;min-width:140px;text-align:center;text-transform:capitalize}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:12px}
+.statCard{background:#fff;border:1px solid #e2e8f0;border-radius:12px;padding:16px;text-align:center}
+.statNum{display:block;font-size:28px;font-weight:800}
+.statLabel{display:block;font-size:12px;color:#94a3b8;margin-top:4px}
+.calendar{display:grid;grid-template-columns:repeat(7,1fr);gap:6px}
+.dowHeader{text-align:center;font-size:12px;font-weight:700;color:#94a3b8;padding:6px 0;text-transform:uppercase}
+.dayCell{
+  background:#fff;
+  border:1.5px solid #e2e8f0;
+  border-radius:10px;
+  padding:6px;
+  min-height:84px;
+  cursor:pointer;
+  text-align:left;
+  display:flex;
+  flex-direction:column;
+  gap:2px;
+  transition:all .15s;
+  position:relative;
+  overflow:hidden;
+}
+.dayCell:hover{border-color:#6366f1;box-shadow:0 2px 8px rgba(99,102,241,.15)}
+.dayCellFilled{background:#f8fafc}
+.today{border-color:#6366f1;background:#eff6ff}
+.pastDay,
+.pastDay:hover{
+  background:#f1f5f9;
+  border-color:#e2e8f0;
+  box-shadow:none;
+  cursor:not-allowed;
+  opacity:.62;
+}
+.pastDay .dayNum{color:#94a3b8}
+.dayNum{font-size:13px;font-weight:700;color:#1e293b;flex-shrink:0}
+.today .dayNum{color:#6366f1}
+
+/* Shift block inside cell */
+.cellShiftBlock{
+  display:flex;
+  flex-direction:column;
+  border-left:3px solid #6366f1;
+  padding:2px 4px;
+  border-radius:0 4px 4px 0;
+  background:rgba(99,102,241,0.07);
+  flex:1;
+  overflow:hidden;
+  gap:1px;
+}
+.cellShiftName{font-size:10px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;line-height:1.3}
+.cellShiftTime{font-size:9px;color:#64748b;white-space:nowrap;line-height:1.2}
+.cellStatusDot{font-size:9px;margin-top:auto}
+
+/* Legacy */
+.shiftName{font-size:10px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.shiftTime{font-size:10px;color:#64748b}
+.statusDot{font-size:10px;margin-top:auto}
+.coworkerCount{font-size:10px;color:#6366f1;font-weight:600;margin-top:auto}
+.addHint{font-size:20px;color:#e2e8f0;margin:auto}
+
+.dayBody{display:flex;flex-direction:column;gap:14px}
+.myShift{border-left:4px solid #6366f1;padding:12px 16px;background:#f8fafc;border-radius:8px;display:flex;flex-direction:column;gap:4px}
+.myShiftLabel{font-size:11px;font-weight:700;color:#6366f1;text-transform:uppercase;letter-spacing:.05em}
+.myShiftName{font-size:18px;font-weight:800}
+.myShiftTime{font-size:14px;color:#475569}
+.noEntry{color:#94a3b8;text-align:center;padding:16px 0;font-size:14px}
+.coworkers{display:flex;flex-direction:column;gap:8px}
+.coworkersTitle{font-size:13px;font-weight:700;color:#1e293b}
+.coworkerRow{display:flex;align-items:center;gap:8px;padding:8px 12px;background:#f8fafc;border-radius:8px;font-size:13px;flex-wrap:wrap}
+.coworkerMe{background:#eff6ff;border:1px solid #bfdbfe}
+.coworkerDot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+.coworkerRole{color:#6366f1;font-weight:600;font-size:12px;background:#eff6ff;padding:2px 8px;border-radius:20px}
+.coworkerFio{font-weight:600;color:#1e293b}
+.coworkerTime{color:#64748b;margin-left:auto;font-size:12px;display:flex;align-items:center}
+.crForm{display:flex;flex-direction:column;gap:14px}
+.crDate,.crCurrent{font-size:14px;color:#1e293b;background:#f8fafc;padding:8px 12px;border-radius:8px}
+.field{display:flex;flex-direction:column;gap:4px}
+.label{font-size:13px;font-weight:500;color:#475569}
+.select,.textarea{padding:8px 12px;border:1px solid #e2e8f0;border-radius:8px;font-size:14px;outline:none;font-family:inherit}
+.select:focus,.textarea:focus{border-color:#6366f1}
+.textarea{resize:vertical}
+.crNote{font-size:12px;color:#92400e;background:#fffbeb;border:1px solid #fde68a;border-radius:8px;padding:10px 12px}
+
+/* Responsive */
+@media (max-width:768px){
+  .calendar{gap:3px}
+  .dayCell{min-height:56px;padding:4px}
+  .dayNum{font-size:11px}
+  .cellShiftBlock{display:none}
+  .coworkerCount{font-size:9px}
+  .addHint{font-size:16px}
+  .head{flex-direction:column}
+  .nav{justify-content:center}
+  .stats{grid-template-columns:repeat(3,1fr)}
+}
+@media (max-width:480px){
+  .dowHeader{font-size:9px;padding:3px 0}
+  .dayCell{min-height:40px}
+  .statNum{font-size:20px}
+}

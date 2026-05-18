@@ -1,124 +1,77 @@
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { z } from 'zod';
-import { useNavigate, Navigate } from 'react-router-dom';
-import { toast } from 'react-toastify';
+import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useLoginMutation } from '../../api/api';
 import { useAppDispatch } from '../../store/store';
 import { setCredentials } from './authSlice';
-import { Input } from '../../components/common/Input';
-import { Button } from '../../components/common/Button';
-import { useAuth } from '../../hooks/useAuth';
+import { toast } from 'react-toastify';
 import styles from './LoginPage.module.css';
 
-const schema = z.object({
-  login: z.string().min(1, 'Введите пользователя'),
-  password: z.string().min(1, 'Введите пароль'),
-});
-
-type FormValues = z.infer<typeof schema>;
+function apiMessage(error: unknown, fallback: string) {
+  if (error && typeof error === 'object' && 'data' in error) {
+    const data = error.data;
+    if (data && typeof data === 'object' && 'message' in data) return String(data.message);
+  }
+  return fallback;
+}
 
 export function LoginPage() {
-  const navigate = useNavigate();
-  const dispatch = useAppDispatch();
-  const { isAuthenticated, role } = useAuth();
+  const [form, setForm] = useState({ username: '', password: '' });
   const [login, { isLoading }] = useLoginMutation();
+  const dispatch = useAppDispatch();
+  const navigate = useNavigate();
 
-  if (isAuthenticated) {
-    return <Navigate to={role === 'admin' ? '/admin/employees' : '/dashboard'} replace />;
-  }
-
-  const {
-    register,
-    handleSubmit,
-    formState: { errors },
-  } = useForm<FormValues>({
-    resolver: zodResolver(schema),
-    defaultValues: { login: '', password: '' },
-  });
-
-  const onSubmit = async (values: FormValues) => {
+  const submit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!form.username || !form.password) { toast.error('Введите логин и пароль'); return; }
     try {
-      const res = await login(values).unwrap();
-
-      dispatch(
-        setCredentials({
-          token: res.token,
-          role: res.role,
-          id: res.id,
-          fio: res.fio,
-          username: res.username,
-        })
-      );
-
-      toast.success('Успешная авторизация');
-
-      if (res.role === 'admin') navigate('/admin/employees', { replace: true });
-      else navigate('/dashboard', { replace: true });
+      // Send both 'username' and 'login' to support both field names
+      const res = await login({ username: form.username, password: form.password }).unwrap();
+      const user = res.user || { id: res.id, fio: res.fio, role: res.role, status: true, username: res.username };
+      dispatch(setCredentials({ token: res.token, user }));
+      toast.success(`Добро пожаловать, ${user.fio}!`);
+      if (res.role === 'admin') navigate('/admin/employees');
+      else if (res.role === 'moderator') navigate('/mod/schedule');
+      else navigate('/dashboard');
     } catch (e: unknown) {
-      const msg =
-        typeof e === 'object' && e && 'data' in e
-          ? String((e as { data?: { message?: string } }).data?.message ?? 'Ошибка авторизации')
-          : 'Ошибка авторизации';
-
-      toast.error(msg);
+      toast.error(apiMessage(e, 'Ошибка входа'));
     }
   };
 
   return (
-    <div className={styles.page}>
-      <div className={styles.panel}>
-        <section className={styles.hero}>
-          <div className={styles.heroInner}>
-            <p className={styles.kicker}>MVP презентация</p>
-
-            <h1 className={styles.heroTitle}>
-              Полный контроль над расписанием команды
-            </h1>
-
-            <p className={styles.heroLead}>
-              Современная панель для администраторов и быстрый self-service для операторов —
-              графики, доступность и лимиты в одном месте.
-            </p>
-
-            <ul className={styles.list}>
-              <li>Недельные графики и подтверждение смен</li>
-              <li>Доступность и простые запросы на изменения</li>
-              <li>Роли и базовая статистика</li>
-            </ul>
+    <div className={styles.wrap}>
+      <div className={styles.left}>
+        <div className={styles.leftContent}>
+          <div className={styles.logo}>CC</div>
+          <div className={styles.badge}>МВП ПРЕЗЕНТАЦИЯ</div>
+          <h1 className={styles.hero}>Полный контроль над расписанием команды</h1>
+          <p className={styles.heroSub}>Современная панель для администраторов и быстрый self-service для сотрудников — графики и заявки в одном месте.</p>
+          <ul className={styles.features}>
+            <li>Недельные и месячные графики</li>
+            <li>Заявки на изменение смен</li>
+            <li>QR-коды для отметки присутствия</li>
+            <li>Роли: Администратор, Модератор, Оператор</li>
+          </ul>
+        </div>
+      </div>
+      <div className={styles.right}>
+        <form className={styles.card} onSubmit={submit}>
+          <h2 className={styles.title}>Авторизация</h2>
+          <p className={styles.sub}>Вход по логину или ФИО</p>
+          <div className={styles.field}>
+            <label className={styles.label}>Пользователь</label>
+            <input className={styles.input} autoComplete="username" placeholder="Логин или ФИО"
+              value={form.username} onChange={e => setForm(f => ({ ...f, username: e.target.value }))} />
           </div>
-        </section>
-
-        <section className={styles.formSection}>
-          <div className={styles.formCard}>
-            <h2 className={styles.formTitle}>Авторизация</h2>
-
-            <p className={styles.formHint}>
-              Демо-аккаунт: admin / admin123 или operator / op123
-            </p>
-
-            <form className={styles.form} onSubmit={handleSubmit(onSubmit)} noValidate>
-              <Input
-                label="Пользователь"
-                autoComplete="username"
-                error={errors.login?.message}
-                {...register('login')}
-              />
-
-              <Input
-                label="Пароль"
-                type="password"
-                autoComplete="current-password"
-                error={errors.password?.message}
-                {...register('password')}
-              />
-
-              <Button type="submit" className={styles.submit} loading={isLoading}>
-                Войти
-              </Button>
-            </form>
+          <div className={styles.field}>
+            <label className={styles.label}>Пароль</label>
+            <input className={styles.input} type="password" autoComplete="current-password" placeholder="••••••••"
+              value={form.password} onChange={e => setForm(f => ({ ...f, password: e.target.value }))} />
           </div>
-        </section>
+          <button className={styles.btn} type="submit" disabled={isLoading}>
+            {isLoading ? 'Вход…' : 'Войти'}
+          </button>
+          <p className={styles.hint}>Нет пароля? Обратитесь к администратору или <a href="/register" className={styles.link}>зарегистрируйтесь</a>.</p>
+        </form>
       </div>
     </div>
   );

@@ -1,112 +1,117 @@
 import { useMemo, useState } from 'react';
-import {
-  Bar,
-  BarChart,
-  CartesianGrid,
-  ResponsiveContainer,
-  Tooltip,
-  XAxis,
-  YAxis,
-} from 'recharts';
-import { useShiftStatsQuery } from '../../api/api';
+import { useShiftStatsQuery, useShiftLimitsDataQuery } from '../../api/api';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import styles from './StatsTab.module.css';
 
-export function StatsTab() {
-  const now = useMemo(() => new Date(), []);
-  const [year, setYear] = useState(now.getFullYear());
-  const [month, setMonth] = useState(now.getMonth() + 1);
-  const { data = [], isLoading } = useShiftStatsQuery({ year, month });
+const roleLabels: Record<string,string> = {
+  admin:'Администратор', moderator:'Модератор', operator:'Оператор', stajer:'Стажёр', uchenik:'Ученик',
+};
 
-  const chartData = useMemo(
-    () =>
-      data.map((r) => ({
-        name: r.fio.length > 18 ? `${r.fio.slice(0, 16)}…` : r.fio,
-        full: r.fio,
-        shifts: r.shift_count,
-      })),
-    [data]
-  );
+export function StatsTab() {
+  const now = new Date();
+  const [year,  setYear]  = useState(now.getFullYear());
+  const [month, setMonth] = useState(now.getMonth()+1);
+
+  const { data = [], isLoading } = useShiftStatsQuery({ year, month });
+  const { data: limData } = useShiftLimitsDataQuery();
+
+  const months = ['Январь','Февраль','Март','Апрель','Май','Июнь','Июль','Август','Сентябрь','Октябрь','Ноябрь','Декабрь'];
+
+  // Find users below minimum
+  const belowMin = useMemo(() => {
+    if (!limData) return [];
+    return data.filter(u => {
+      const ex  = limData.exceptions.find(e => e.user_id === u.id);
+      const lim = limData.limits.find(l => l.role === u.role);
+      const min = ex ? ex.min_shifts_per_week : lim?.min_shifts_per_week ?? 0;
+      // approximate: monthly min ≈ weekly min * 4
+      return min > 0 && u.shift_count < min * 4;
+    });
+  }, [data, limData]);
+
+  const total = data.reduce((s, u) => s + u.shift_count, 0);
+  const chartData = data.filter(u => u.shift_count > 0).slice(0, 20);
 
   return (
     <div className={styles.page}>
       <div className={styles.head}>
-        <div>
-          <h1 className={styles.title}>Статистика</h1>
-          <p className={styles.sub}>Количество смен у сотрудников за выбранный месяц.</p>
-        </div>
-
-        <div className={styles.filters}>
-          <label className={styles.f}>
-            Год
-            <select
-              className={styles.sel}
-              value={year}
-              onChange={(e) => setYear(Number(e.target.value))}
-            >
-              {[now.getFullYear() - 1, now.getFullYear(), now.getFullYear() + 1].map((y) => (
-                <option key={y} value={y}>
-                  {y}
-                </option>
-              ))}
-            </select>
-          </label>
-
-          <label className={styles.f}>
-            Месяц
-            <select
-              className={styles.sel}
-              value={month}
-              onChange={(e) => setMonth(Number(e.target.value))}
-            >
-              {Array.from({ length: 12 }, (_, i) => i + 1).map((m) => (
-                <option key={m} value={m}>
-                  {m}
-                </option>
-              ))}
-            </select>
-          </label>
+        <div><h1 className={styles.title}>Статистика</h1><p className={styles.sub}>Смены по сотрудникам за выбранный месяц</p></div>
+        <div className={styles.controls}>
+          <select className={styles.sel} value={month} onChange={e => setMonth(Number(e.target.value))}>
+            {months.map((m,i) => <option key={i+1} value={i+1}>{m}</option>)}
+          </select>
+          <input type="number" className={styles.yearInput} value={year} min={2020} max={2030} onChange={e => setYear(Number(e.target.value))} />
         </div>
       </div>
 
-      <div className={styles.card}>
-        {isLoading ? <p className={styles.muted}>Загрузка…</p> : null}
+      {belowMin.length > 0 && (
+        <div className={styles.warnBox}>
+          <div className={styles.warnTitle}>⚠️ Сотрудники ниже минимума смен ({belowMin.length})</div>
+          <div className={styles.warnList}>
+            {belowMin.map(u => (
+              <div key={u.id} className={styles.warnRow}>
+                <span className={styles.warnFio}>{u.fio}</span>
+                <span className={styles.warnRole}>{roleLabels[u.role]||u.role}</span>
+                <span className={styles.warnCount}>Смен: {u.shift_count}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
-        <div className={styles.chart}>
-          <ResponsiveContainer width="100%" height={360}>
-            <BarChart data={chartData} margin={{ top: 16, right: 16, left: 0, bottom: 8 }}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" vertical={false} />
-              <XAxis
-                dataKey="name"
-                tick={{ fontSize: 11 }}
-                interval={0}
-                angle={-18}
-                textAnchor="end"
-                height={70}
-              />
-              <YAxis allowDecimals={false} tick={{ fontSize: 12 }} />
-              <Tooltip
-                cursor={{ fill: 'rgba(14, 165, 233, 0.06)' }}
-                content={({ active, payload }) => {
-                  if (!active || !payload?.length) return null;
+      <div className={styles.summaryCards}>
+        <div className={styles.card}><span className={styles.cardNum}>{data.length}</span><span className={styles.cardLabel}>Сотрудников</span></div>
+        <div className={styles.card}><span className={styles.cardNum}>{total}</span><span className={styles.cardLabel}>Всего смен</span></div>
+        <div className={styles.card}><span className={styles.cardNum}>{data.length ? (total/data.length).toFixed(1) : 0}</span><span className={styles.cardLabel}>Среднее на чел.</span></div>
+      </div>
 
-                  const row = payload[0].payload as {
-                    full: string;
-                    shifts: number;
-                  };
+      {isLoading ? <div className={styles.loading}>Загрузка…</div> : (
+        <>
+          {chartData.length > 0 && (
+            <div className={styles.chartWrap}>
+              <ResponsiveContainer width="100%" height={300}>
+                <BarChart data={chartData} margin={{top:10,right:10,left:0,bottom:60}}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
+                  <XAxis dataKey="fio" tick={{fontSize:11}} angle={-35} textAnchor="end" interval={0} />
+                  <YAxis tick={{fontSize:12}} />
+                  <Tooltip formatter={(v) => [`${Number(v ?? 0)} смен`, 'Смены']} />
+                  <Bar dataKey="shift_count" fill="#6366f1" radius={[4,4,0,0]} name="Смены" />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          )}
 
+          <div className={styles.tableWrap}>
+            <table className={styles.table}>
+              <thead><tr><th>#</th><th>Сотрудник</th><th>Роль</th><th>Смен</th><th>Статус</th></tr></thead>
+              <tbody>
+                {data.length===0 && <tr><td colSpan={5} className={styles.empty}>Нет данных</td></tr>}
+                {[...data].sort((a,b) => b.shift_count-a.shift_count).map((u,i) => {
+                  const ex  = limData?.exceptions.find(e => e.user_id===u.id);
+                  const lim = limData?.limits.find(l => l.role===u.role);
+                  const min = ex ? ex.min_shifts_per_week : lim?.min_shifts_per_week ?? 0;
+                  const max = ex ? ex.max_shifts_per_week : lim?.max_shifts_per_week ?? 99;
+                  const isLow  = min > 0 && u.shift_count < min * 4;
+                  const isHigh = u.shift_count > max * 4;
                   return (
-                    <div className={styles.tt}>
-                      <div className={styles.ttTitle}>{row.full}</div>
-                      <div className={styles.ttVal}>{row.shifts} смен</div>
-                    </div>
+                    <tr key={u.id} className={isLow?styles.rowLow:isHigh?styles.rowHigh:''}>
+                      <td className={styles.num}>{i+1}</td>
+                      <td className={styles.fio}>{u.fio}</td>
+                      <td><span className={styles.rolePill}>{roleLabels[u.role]||u.role}</span></td>
+                      <td><span className={styles.count}>{u.shift_count}</span></td>
+                      <td>
+                        {isLow  && <span className={styles.badgeLow}>Мало смен</span>}
+                        {isHigh && <span className={styles.badgeHigh}>Много смен</span>}
+                        {!isLow && !isHigh && <span className={styles.badgeOk}>В норме</span>}
+                      </td>
+                    </tr>
                   );
-                }}
-              />
-              <Bar dataKey="shifts" fill="#0d9488" radius={[6, 6, 0, 0]} maxBarSize={48} />
-            </BarChart>
-          </ResponsiveContainer>
-        </div>
-      </div>
+                })}
+              </tbody>
+            </table>
+          </div>
+        </>
+      )}
     </div>
   );
 }

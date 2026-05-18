@@ -30,6 +30,11 @@ async function main() {
   const sql = fs.readFileSync(sqlPath, 'utf8');
 
   const client = await pool.connect();
+  const deleteIfExists = async (table) => {
+    const exists = await client.query('SELECT to_regclass($1) AS table_name', [table]);
+    if (exists.rows[0].table_name) await client.query(`DELETE FROM ${table}`);
+  };
+
   try {
     console.log('Connecting as DB user:', dbUser(), '→ database:', process.env.DB_NAME || 'call_center_mvp');
     console.log('Running schema from', sqlPath);
@@ -38,14 +43,24 @@ async function main() {
     const adminHash = await bcrypt.hash('admin123', SALT_ROUNDS);
     const opHash = await bcrypt.hash('op123', SALT_ROUNDS);
 
-    await client.query('DELETE FROM shift_type_roles');
-    await client.query('DELETE FROM shift_type_user_overrides');
-    await client.query('DELETE FROM shift_entries');
-    await client.query('DELETE FROM schedule_weeks');
-    await client.query('DELETE FROM free_time');
-    await client.query('DELETE FROM change_requests');
-    await client.query('DELETE FROM shift_types');
-    await client.query('DELETE FROM users');
+    await deleteIfExists('shift_type_roles');
+    await deleteIfExists('shift_type_user_overrides');
+    await deleteIfExists('shift_limit_type_exceptions');
+    await deleteIfExists('shift_limit_exceptions');
+    await deleteIfExists('notifications');
+    await deleteIfExists('staff_comments');
+    await deleteIfExists('test_results');
+    await deleteIfExists('audit_log');
+    await deleteIfExists('change_requests');
+    await deleteIfExists('shift_entries');
+    await deleteIfExists('schedule_weeks');
+    await deleteIfExists('free_time');
+    await deleteIfExists('work_logs');
+    await deleteIfExists('user_documents');
+    await deleteIfExists('tasks');
+    await deleteIfExists('qr_places');
+    await deleteIfExists('shift_types');
+    await deleteIfExists('users');
 
     const adminRes = await client.query(
       `INSERT INTO users (username, fio, role, status, password)

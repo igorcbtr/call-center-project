@@ -3,82 +3,119 @@ const express = require('express');
 const cors = require('cors');
 const path = require('path');
 
-const controller = require('./logRegController');
-const adminService = require('./adminService');
-const scanController = require('./ScanController');
-const graficController = require('./graficController');
-const authMiddleware = require('./middleware');
-const requireRole = authMiddleware.requireRole;
+const auth    = require('./logRegController');
+const admin   = require('./adminService');
+const grafic  = require('./graficController');
+const docs    = require('./documentsController');
+const tasks   = require('./tasksController');
+const authMw  = require('./middleware');
+const { requireRole } = authMw;
 
-const app = express();
+const app  = express();
 const PORT = Number(process.env.PORT || 3002);
-const CORS_ORIGIN = process.env.CORS_ORIGIN || 'http://localhost:5173';
+const allowedOrigins = new Set([
+  process.env.CORS_ORIGIN || 'http://localhost:5173',
+  'http://localhost:5173',
+  'http://127.0.0.1:5173',
+]);
 
-app.use(cors({ origin: CORS_ORIGIN, credentials: true }));
+app.use(cors({
+  origin(origin, callback) {
+    if (!origin || allowedOrigins.has(origin)) return callback(null, true);
+    return callback(new Error('Not allowed by CORS'));
+  },
+  credentials: true,
+}));
 app.use(express.json());
+app.use('/docs', express.static(path.join(__dirname, '../docs')));
+// Serve uploaded files (protected via API, not directly)
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 const api = express.Router();
 
 // Auth
-api.get('/users', controller.getUsers);
-api.post('/login', controller.login);
-api.post('/register', controller.register);
-api.get('/auth/me', authMiddleware, controller.me);
+api.get ('/users',    auth.getUsers);
+api.post('/login',    auth.login);
+api.post('/register', auth.register);
+api.get ('/auth/me',  authMw, auth.me);
 
-// Admin - employees
-api.post('/admin/create-qr', authMiddleware, requireRole('admin'), adminService.createQrPlace);
-api.get('/admin/employees', authMiddleware, requireRole('admin'), adminService.getAllEmployees);
-api.get('/admin/employees/:id', authMiddleware, requireRole('admin'), adminService.getEmployeeById);
-api.put('/admin/employees/:id', authMiddleware, requireRole('admin'), adminService.updateEmployee);
-api.post('/admin/employees', authMiddleware, requireRole('admin'), adminService.createEmployee);
-api.post('/admin/employees/:id/reset-password', authMiddleware, requireRole('admin'), adminService.resetEmployeePassword);
-api.delete('/admin/employees/:id', authMiddleware, requireRole('admin'), adminService.deleteEmployee);
-api.get('/admin/stats/shifts-by-user', authMiddleware, requireRole('admin'), adminService.getShiftStatsByUser);
+// Employees
+api.get   ('/admin/employees',                    authMw, requireRole('admin','moderator'), admin.getAllEmployees);
+api.get   ('/admin/employees/:id',                authMw, requireRole('admin','moderator'), admin.getEmployeeById);
+api.post  ('/admin/employees',                    authMw, requireRole('admin','moderator'), admin.createEmployee);
+api.put   ('/admin/employees/:id',                authMw, requireRole('admin','moderator'), admin.updateEmployee);
+api.post  ('/admin/employees/:id/reset-password', authMw, requireRole('admin'),             admin.resetEmployeePassword);
+api.delete('/admin/employees/:id',                authMw, requireRole('admin'),             admin.deleteEmployee);
+api.put   ('/admin/employees/:id/moderators',     authMw, requireRole('admin'),             admin.setModeratorStaff);
+api.post  ('/admin/employees/:id/comments',       authMw, requireRole('admin','moderator'), admin.addComment);
+api.delete('/admin/comments/:id',                 authMw, requireRole('admin','moderator'), admin.deleteComment);
+api.post  ('/admin/employees/:id/tests',          authMw, requireRole('admin','moderator'), admin.addTestResult);
+api.delete('/admin/tests/:id',                    authMw, requireRole('admin','moderator'), admin.deleteTestResult);
+api.get   ('/admin/audit',                        authMw, requireRole('admin'),             admin.getAuditLog);
+api.get   ('/moderator/my-staff',                 authMw, requireRole('moderator'),         admin.getMyStaff);
 
-// QR scan
-api.post('/scan/status', authMiddleware, scanController.getStatus);
-api.post('/scan/check-in', authMiddleware, scanController.checkIn);
-api.post('/scan/check-out', authMiddleware, scanController.checkOut);
-api.post('/scan/mark-open', authMiddleware, scanController.markQrOpen);
+// Shift types (only admin can create/edit)
+api.get   ('/admin/shift-types',     authMw, admin.getShiftTypes);
+api.post  ('/admin/shift-types',     authMw, requireRole('admin'), admin.createShiftType);
+api.put   ('/admin/shift-types/:id', authMw, requireRole('admin'), admin.updateShiftType);
+api.delete('/admin/shift-types/:id', authMw, requireRole('admin'), admin.deleteShiftType);
+
+// Limits (admin: global; moderator: exceptions only)
+api.get   ('/admin/shift-limits',                authMw, admin.getShiftLimits);
+api.put   ('/admin/shift-limits',                authMw, requireRole('admin'),             admin.putShiftLimits);
+api.post  ('/admin/shift-limits/exception',      authMw, requireRole('admin','moderator'), admin.upsertLimitException);
+api.delete('/admin/shift-limits/exception/:id',  authMw, requireRole('admin','moderator'), admin.deleteLimitException);
+
+// QR
+api.post  ('/admin/qr',     authMw, requireRole('admin'), admin.createQrPlace);
+api.get   ('/admin/qr',     authMw, requireRole('admin'), admin.getQrPlaces);
+api.delete('/admin/qr/:id', authMw, requireRole('admin'), admin.deleteQrPlace);
+
+// Stats & logs
+api.get('/admin/stats/shifts-by-user', authMw, requireRole('admin','moderator'), admin.getShiftStatsByUser);
+api.get('/admin/work-logs',            authMw, requireRole('admin','moderator'), admin.getWorkLogs);
 
 // Schedule
-api.get('/schedule/shift-types', authMiddleware, graficController.getShiftTypes);
-api.get('/schedule/shift-type-roles', authMiddleware, graficController.getShiftTypeRoles);
-api.post('/schedule/shift-types', authMiddleware, requireRole('admin'), graficController.createShiftType);
-api.delete('/schedule/shift-types/:id', authMiddleware, requireRole('admin'), graficController.deleteShiftType);
-api.post('/schedule/shift-roles', authMiddleware, requireRole('admin'), graficController.setShiftRoleAccess);
-api.post('/schedule/user-override', authMiddleware, requireRole('admin'), graficController.setUserShiftOverride);
-api.post('/schedule/available-shifts', authMiddleware, graficController.getAvailableShifts);
-api.post('/schedule/entries', authMiddleware, graficController.createShiftEntry);
-api.put('/schedule/entries/:id', authMiddleware, requireRole('admin'), graficController.updateShiftEntry);
-api.post('/schedule/user-schedule', authMiddleware, graficController.getUserSchedule);
-api.post('/schedule/all-schedules', authMiddleware, requireRole('admin'), graficController.getAllSchedules);
-api.post('/schedule/delete-entry', authMiddleware, requireRole('admin'), graficController.deleteShiftEntry);
-api.post('/schedule/entries/:id/respond', authMiddleware, graficController.respondShiftEntry);
-api.post('/schedule/approve-week', authMiddleware, requireRole('admin'), graficController.approveWeek);
-api.post('/schedule/change-requests', authMiddleware, graficController.createChangeRequest);
-api.get('/schedule/change-requests', authMiddleware, requireRole('admin'), graficController.getChangeRequests);
-api.post('/schedule/process-request', authMiddleware, requireRole('admin'), graficController.processChangeRequest);
-api.post('/schedule/rules', authMiddleware, requireRole('admin'), graficController.setScheduleRule);
-api.get('/schedule/shift-limits', authMiddleware, graficController.getShiftLimits);
-api.put('/schedule/shift-limits', authMiddleware, requireRole('admin'), graficController.putShiftLimits);
-api.get('/schedule/free-time', authMiddleware, graficController.getFreeTime);
-api.post('/schedule/free-time', authMiddleware, graficController.createFreeTime);
-api.delete('/schedule/free-time/:id', authMiddleware, graficController.deleteFreeTime);
+api.get ('/schedule/shift-types',          authMw, grafic.getShiftTypes);
+api.post('/schedule/available-shifts',     authMw, grafic.getAvailableShifts);
+api.post('/schedule/entries',              authMw, grafic.createShiftEntry);
+api.put ('/schedule/entries/:id',          authMw, requireRole('admin','moderator'), grafic.updateShiftEntry);
+api.post('/schedule/user-schedule',        authMw, grafic.getUserSchedule);
+api.post('/schedule/all-schedules',        authMw, grafic.getAllSchedules);
+api.post('/schedule/delete-entry',         authMw, requireRole('admin','moderator'), grafic.deleteShiftEntry);
+api.post('/schedule/entries/:id/respond',  authMw, grafic.respondShiftEntry);
+api.post('/schedule/approve-week',         authMw, requireRole('admin'), grafic.approveWeek);
+api.post('/schedule/change-requests',      authMw, grafic.createChangeRequest);
+api.get ('/schedule/change-requests',      authMw, requireRole('admin','moderator'), grafic.getChangeRequests);
+api.post('/schedule/process-request',      authMw, requireRole('admin','moderator'), grafic.processChangeRequest);
+api.get ('/schedule/shift-limits',         authMw, grafic.getShiftLimits);
+api.put ('/schedule/shift-limits',         authMw, requireRole('admin'), grafic.putShiftLimits);
+
+// Scan
+api.post('/scan/action', authMw, admin.scanAction);
+api.post('/schedule/public-schedule', authMw, grafic.getPublicSchedule);
+api.get ('/scan/logs',   authMw, requireRole('admin','moderator'), admin.getWorkLogs);
 
 // Notifications
-api.get('/notifications', authMiddleware, graficController.getNotifications);
-api.post('/notifications/read', authMiddleware, graficController.markNotificationsRead);
+api.get ('/notifications',      authMw, grafic.getNotifications);
+api.post('/notifications/read', authMw, grafic.markNotificationsRead);
 
-api.get('/profile', authMiddleware, (req, res) => res.json({ message: 'OK', user: req.user }));
+// Documents
+api.get   ('/documents',                    authMw, docs.listDocuments);
+api.get   ('/documents/admin/:userId',      authMw, requireRole('admin','moderator'), docs.listDocumentsAdmin);
+api.post  ('/documents/upload',             authMw, docs.upload.single('file'), docs.uploadDocument);
+api.get   ('/documents/:id/download',       authMw, docs.downloadDocument);
+api.delete('/documents/:id',                authMw, docs.deleteDocument);
+
+// Tasks
+api.get   ('/tasks',     authMw, tasks.getTasks);
+api.post  ('/tasks',     authMw, tasks.createTask);
+api.put   ('/tasks/:id', authMw, tasks.updateTask);
+api.delete('/tasks/:id', authMw, requireRole('admin','moderator'), tasks.deleteTask);
 
 app.use('/api', api);
-
-// Static docs
-app.use('/docs', express.static(path.join(__dirname, '../docs')));
-
 app.listen(PORT, () => {
   console.log(`MVP backend listening on http://localhost:${PORT}`);
-  console.log(`API base: http://localhost:${PORT}/api`);
+  console.log(`API: http://localhost:${PORT}/api`);
   console.log(`Docs: http://localhost:${PORT}/docs`);
 });

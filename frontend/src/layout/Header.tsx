@@ -1,63 +1,111 @@
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAppDispatch } from '../store/store';
 import { logout } from '../features/auth/authSlice';
-import { Button } from '../components/common/Button';
 import { NotificationBell } from '../components/common/NotificationBell';
-import styles from './Header.module.css';
+import { Button } from '../components/common/Button';
 import { useAuth } from '../hooks/useAuth';
-
-const knowledgeUrl = import.meta.env.VITE_KNOWLEDGE_URL || 'https://example.com';
-
-const roleLabels: Record<string, string> = {
-  admin: 'Администратор', moderator: 'Модератор', operator: 'Оператор', stajer: 'Стажёр', uchenik: 'Ученик',
-};
+import styles from './Header.module.css';
 
 export function Header() {
   const navigate = useNavigate();
   const dispatch = useAppDispatch();
-  const { fio, role } = useAuth();
+  const { fio } = useAuth();
+  const [menuOpen, setMenuOpen] = useState(false);
 
   const onLogout = () => {
     dispatch(logout());
-    localStorage.removeItem('mvp_user');
     navigate('/login', { replace: true });
   };
+
+  const rawKnowledgeUrl = import.meta.env.VITE_KNOWLEDGE_URL as string | undefined;
+  const knowledgeUrl = rawKnowledgeUrl && !rawKnowledgeUrl.includes('your-knowledge-base-url.com')
+    ? rawKnowledgeUrl
+    : undefined;
+  const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:3002/api';
+  const docsPath = apiUrl.replace('/api', '/docs');
 
   return (
     <header className={styles.header}>
       <div className={styles.inner}>
         <div className={styles.brand}>
-          <div className={styles.logoIcon}>CC</div>
+          <div className={styles.logoIcon}>📞</div>
           <div>
-            <p className={styles.title}>Колл-центр</p>
-            <p className={styles.sub}>Управление персоналом</p>
+            <p className={styles.brandName}>Колл-центр</p>
+            <p className={styles.brandSub}>Управление персоналом</p>
           </div>
         </div>
 
+        {/* Desktop actions */}
         <div className={styles.actions}>
-          {fio ? (
-            <div className={styles.user}>
-              <div className={styles.userAvatar}>{fio.charAt(0).toUpperCase()}</div>
-              <div className={styles.userInfo}>
-                <span className={styles.name}>{fio}</span>
-                <span className={styles.role}>{roleLabels[role || ''] || role}</span>
-              </div>
-            </div>
-          ) : null}
-
+          <a
+            className={styles.docsLink}
+            href={docsPath}
+            target="_blank"
+            rel="noreferrer"
+            title="Открыть документацию"
+          >
+            📚 Документация
+          </a>
+          {knowledgeUrl && (
+            <a
+              className={styles.knowledgeLink}
+              href={knowledgeUrl}
+              target="_blank"
+              rel="noreferrer"
+              title="База знаний"
+            >
+              💡 База знаний
+            </a>
+          )}
           <NotificationBell />
-
-          <a className={styles.link} href={knowledgeUrl} target="_blank" rel="noreferrer">
-            📚 База знаний
-          </a>
-
-          <a className={styles.link} href="http://localhost:3002/docs" target="_blank" rel="noreferrer">
-            📖 Документация
-          </a>
-
-          <Button variant="secondary" onClick={onLogout}>Выход</Button>
+          <span className={styles.userInfo}>
+            <span className={styles.userFio}>{fio}</span>
+          </span>
+          <Button variant="secondary" size="sm" onClick={onLogout}>Выход</Button>
         </div>
+
+        {/* Mobile hamburger */}
+        <button
+          type="button"
+          className={styles.hamburger}
+          onClick={() => setMenuOpen(o => !o)}
+          aria-label="Меню"
+        >
+          {menuOpen ? '✕' : '☰'}
+        </button>
       </div>
+
+      {/* Mobile dropdown */}
+      {menuOpen && (
+        <div className={styles.mobileMenu}>
+          <a
+            className={styles.mobileLink}
+            href={docsPath}
+            target="_blank"
+            rel="noreferrer"
+            onClick={() => setMenuOpen(false)}
+          >
+            📚 Документация
+          </a>
+          {knowledgeUrl && (
+            <a
+              className={styles.mobileLink}
+              href={knowledgeUrl}
+              target="_blank"
+              rel="noreferrer"
+              onClick={() => setMenuOpen(false)}
+            >
+              💡 База знаний
+            </a>
+          )}
+          <div className={styles.mobileSep} />
+          <span className={styles.mobileFio}>{fio}</span>
+          <button type="button" className={styles.mobileLogout} onClick={onLogout}>
+            Выйти из системы
+          </button>
+        </div>
+      )}
     </header>
   );
 }

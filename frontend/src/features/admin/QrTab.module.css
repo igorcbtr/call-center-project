@@ -1,0 +1,39 @@
+.page{display:flex;flex-direction:column;gap:24px}
+.head{display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:16px}
+.title{font-size:24px;font-weight:700;color:#1e293b;margin:0 0 4px}
+.sub{font-size:13px;color:#64748b;margin:0}
+.createCard{background:#fff;border:1px solid #e2e8f0;border-radius:12px;padding:24px;display:flex;flex-direction:column;gap:12px}
+.createTitle{font-size:16px;font-weight:700;color:#1e293b;margin:0}
+.createRow{display:flex;gap:10px;align-items:center}
+.input{flex:1;padding:10px 14px;border:1.5px solid #e2e8f0;border-radius:8px;font-size:14px;outline:none}
+.input:focus{border-color:#6366f1}
+.hint{font-size:12px;color:#94a3b8;margin:0}
+.newQrCard{background:#fff;border:2px solid #6366f1;border-radius:12px;padding:20px;display:flex;gap:24px;flex-wrap:wrap;align-items:flex-start}
+.newQrLeft{flex-shrink:0}
+.qrImg{width:160px;height:160px;border-radius:8px;border:1px solid #e2e8f0}
+.newQrRight{display:flex;flex-direction:column;gap:10px;flex:1}
+.newQrLabel{font-size:12px;color:#6366f1;font-weight:700;text-transform:uppercase;letter-spacing:.05em}
+.newQrPlace{font-size:22px;font-weight:800;color:#1e293b}
+.newQrLink a{font-size:13px;color:#6366f1;word-break:break-all}
+.newQrActions{display:flex;gap:8px;flex-wrap:wrap}
+.list{display:flex;flex-direction:column;gap:10px}
+.secTitle{font-size:16px;font-weight:700;color:#1e293b;margin:0 0 4px}
+.empty{color:#94a3b8;font-size:14px}
+.row{background:#fff;border:1px solid #e2e8f0;border-radius:10px;padding:14px;display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.rowIcon{font-size:22px;flex-shrink:0}
+.rowBody{display:flex;flex-direction:column;gap:3px;flex:1;min-width:200px}
+.rowPlace{font-weight:700;font-size:15px;color:#1e293b}
+.rowLink{font-size:12px;color:#6366f1;word-break:break-all}
+.rowDate{font-size:11px;color:#94a3b8}
+.rowActions{display:flex;gap:6px}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .head { flex-direction: column; }
+  .createRow { flex-direction: column; }
+  .newQrCard { flex-direction: column; align-items: center; text-align: center; }
+  .newQrLeft { width: 100%; display: flex; justify-content: center; }
+  .qrImg { width: 200px; height: 200px; }
+  .row { flex-direction: column; align-items: flex-start; }
+  .rowActions { width: 100%; justify-content: flex-end; }
+}

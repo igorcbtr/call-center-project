@@ -1,0 +1,32 @@
+.wrap{min-height:100vh;background:linear-gradient(135deg,#1e293b 0%,#334155 100%);display:flex;align-items:center;justify-content:center;padding:20px}
+.card{background:#fff;border-radius:20px;padding:36px 32px;max-width:380px;width:100%;display:flex;flex-direction:column;align-items:center;gap:16px;box-shadow:0 20px 60px rgba(0,0,0,.3);text-align:center}
+.logo{width:52px;height:52px;background:linear-gradient(135deg,#6366f1,#8b5cf6);border-radius:14px;color:#fff;font-weight:900;font-size:18px;display:flex;align-items:center;justify-content:center}
+.place{font-size:22px;font-weight:800;color:#1e293b;margin:0}
+.sub{font-size:13px;color:#94a3b8;margin:0}
+.userBadge{display:flex;align-items:center;gap:10px;background:#f8fafc;border-radius:12px;padding:10px 16px;width:100%;box-sizing:border-box}
+.userAvatar{width:32px;height:32px;background:linear-gradient(135deg,#6366f1,#8b5cf6);border-radius:50%;color:#fff;font-weight:700;font-size:14px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.userName{flex:1;font-weight:600;font-size:14px;color:#1e293b;text-align:left}
+.switchBtn{background:none;border:none;font-size:12px;color:#6366f1;cursor:pointer;font-weight:500}
+.switchBtn:hover{text-decoration:underline}
+.actions{display:grid;grid-template-columns:1fr 1fr;gap:12px;width:100%}
+.actionBtn{padding:20px 12px;border:none;border-radius:14px;font-size:16px;font-weight:700;cursor:pointer;transition:all .15s;display:flex;flex-direction:column;align-items:center;gap:6px}
+.actionBtn:disabled{opacity:.5;cursor:not-allowed}
+.actionIn{background:#d1fae5;color:#065f46}
+.actionIn:hover:not(:disabled){background:#a7f3d0;transform:translateY(-2px)}
+.actionOut{background:#fee2e2;color:#991b1b}
+.actionOut:hover:not(:disabled){background:#fecaca;transform:translateY(-2px)}
+.loginForm{display:flex;flex-direction:column;gap:10px;width:100%}
+.loginHint{font-size:14px;color:#64748b;margin:0}
+.loginInput{padding:10px 14px;border:1.5px solid #e2e8f0;border-radius:10px;font-size:14px;outline:none;width:100%;box-sizing:border-box}
+.loginInput:focus{border-color:#6366f1}
+.btn{padding:12px 24px;background:linear-gradient(135deg,#6366f1,#8b5cf6);color:#fff;border:none;border-radius:10px;font-size:15px;font-weight:700;cursor:pointer;width:100%;transition:opacity .15s}
+.btn:hover:not(:disabled){opacity:.9}
+.btn:disabled{opacity:.5;cursor:not-allowed}
+.btnSecondary{padding:10px 24px;background:#f1f5f9;color:#475569;border:none;border-radius:10px;font-size:14px;font-weight:600;cursor:pointer;width:100%}
+.btnSecondary:hover{background:#e2e8f0}
+.doneIcon{font-size:56px}
+.doneTitle{font-size:22px;font-weight:800;color:#1e293b;margin:0}
+.doneSub{font-size:14px;color:#64748b;margin:0}
+.doneUser{font-size:15px;font-weight:600;color:#1e293b;margin:0}
+.doneTime{font-size:24px;font-weight:800;color:#6366f1;margin:0}
+.doneActions{display:flex;flex-direction:column;gap:8px;width:100%}
