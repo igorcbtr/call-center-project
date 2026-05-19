@@ -16,6 +16,15 @@ async function notifyUser(userId, title, body, kind, refId, refType) {
   } catch(e) { console.error('notify error', e.message); }
 }
 
+function formatDateRu(value) {
+  if (!value) return '';
+  const months = ['января','февраля','марта','апреля','мая','июня','июля','августа','сентября','октября','ноября','декабря'];
+  const source = value instanceof Date ? value.toISOString().slice(0, 10) : String(value).slice(0, 10);
+  const [year, month, day] = source.split('-').map(Number);
+  if (!year || !month || !day) return String(value);
+  return `${day} ${months[month - 1]} ${year}`;
+}
+
 async function getAvailableShiftTypesForUser(userId) {
   const r = await pool.query(`
     SELECT DISTINCT st.*
@@ -103,7 +112,7 @@ exports.createShiftEntry = async (req, res) => {
        comment||null, req.user?.id||null]);
 
     if (['admin','moderator'].includes(req.user?.role) && req.user.id !== uid) {
-      await notifyUser(uid, 'Вам назначена смена', `Смена «${st.name}» на ${date}`, 'shift', r.rows[0].id, 'shift_entry');
+      await notifyUser(uid, 'Вам назначена смена', `Смена «${st.name}» на ${formatDateRu(date)}`, 'shift', r.rows[0].id, 'shift_entry');
     }
     res.json({ message: 'Создана', entry: r.rows[0] });
   } catch(err) {
@@ -128,7 +137,16 @@ exports.updateShiftEntry = async (req, res) => {
       [shift_type_id, comment||null, isFree?(custom_start||null):null, isFree?(custom_end||null):null, id]);
     if (!r.rows.length) return res.status(404).json({ message: 'Не найдено' });
     const entry = r.rows[0];
-    await notifyUser(entry.user_id, 'Смена изменена', `Смена на ${entry.date} обновлена`, 'shift', id, 'shift_entry');
+    const shiftName = stRes.rows[0]?.name || 'смена';
+    const commentText = comment?.trim() ? ` Комментарий: ${comment.trim()}` : '';
+    await notifyUser(
+      entry.user_id,
+      'Смена изменена',
+      `Смена «${shiftName}» на ${formatDateRu(entry.date)} обновлена.${commentText}`,
+      'shift',
+      id,
+      'shift_entry'
+    );
     res.json({ message: 'Обновлена', entry });
   } catch(err) { console.error(err); res.status(500).json({ message: 'Ошибка' }); }
 };
@@ -216,7 +234,7 @@ exports.deleteShiftEntry = async (req, res) => {
     if (!er.rows.length) return res.status(404).json({ message: 'Не найдено' });
     await pool.query('DELETE FROM shift_entries WHERE id=$1',[entry_id]);
     const st = await pool.query('SELECT name FROM shift_types WHERE id=$1',[er.rows[0].shift_type_id]);
-    await notifyUser(er.rows[0].user_id,'Смена удалена',`Смена «${st.rows[0]?.name||''}» на ${er.rows[0].date} удалена`,'warning');
+    await notifyUser(er.rows[0].user_id,'Смена удалена',`Смена «${st.rows[0]?.name||''}» на ${formatDateRu(er.rows[0].date)} удалена`,'warning');
     res.json({ message: 'Удалена' });
   } catch(err) { console.error(err); res.status(500).json({ message: 'Ошибка' }); }
 };
