@@ -1,5 +1,7 @@
 import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react';
+import type { BaseQueryFn, FetchArgs, FetchBaseQueryError } from '@reduxjs/toolkit/query/react';
 import type { AuthState } from '../features/auth/authSlice';
+import { logout } from '../features/auth/authSlice';
 import type {
   AllSchedulesResponse, ChangeRequest, Notification, QrPlace,
   ShiftEntry, ShiftLimitsData, ShiftType, ShiftStatRow,
@@ -8,16 +10,26 @@ import type {
 
 const baseUrl = import.meta.env.VITE_API_URL || 'http://localhost:3002/api';
 
+const rawBaseQuery = fetchBaseQuery({
+  baseUrl,
+  prepareHeaders: (headers, { getState }) => {
+    const token = (getState() as { auth: AuthState }).auth.token;
+    if (token) headers.set('Authorization', `Bearer ${token}`);
+    return headers;
+  },
+});
+
+const baseQueryWithAuthReset: BaseQueryFn<string | FetchArgs, unknown, FetchBaseQueryError> = async (args, api, extraOptions) => {
+  const result = await rawBaseQuery(args, api, extraOptions);
+  if (result.error?.status === 401) {
+    api.dispatch(logout());
+  }
+  return result;
+};
+
 export const api = createApi({
   reducerPath: 'api',
-  baseQuery: fetchBaseQuery({
-    baseUrl,
-    prepareHeaders: (headers, { getState }) => {
-      const token = (getState() as { auth: AuthState }).auth.token;
-      if (token) headers.set('Authorization', `Bearer ${token}`);
-      return headers;
-    },
-  }),
+  baseQuery: baseQueryWithAuthReset,
   tagTypes: ['Employee','Schedule','ShiftTypes','Limits','Stats','Me','Notifications','ChangeRequests','QR','Logs'],
   endpoints: (b) => ({
     login: b.mutation<LoginResponse, { username: string; password: string }>({
@@ -106,6 +118,9 @@ export const api = createApi({
     userSchedule: b.mutation<ShiftEntry[], { user_id: number; start_date: string; end_date: string }>({
       query: (body) => ({ url:'/schedule/user-schedule', method:'POST', body }),
     }),
+    availableShifts: b.mutation<ShiftType[], { user_id: number }>({
+      query: (body) => ({ url:'/schedule/available-shifts', method:'POST', body }),
+    }),
     allSchedules: b.mutation<AllSchedulesResponse, { start_date: string; end_date: string }>({
       query: (body) => ({ url:'/schedule/all-schedules', method:'POST', body }),
     }),
@@ -189,7 +204,7 @@ export const {
   useAddTestResultMutation, useDeleteTestResultMutation, useAuditLogQuery,
   useShiftTypesQuery, useCreateShiftTypeMutation, useUpdateShiftTypeMutation, useDeleteShiftTypeMutation,
   useShiftLimitsDataQuery, usePutShiftLimitsMutation, useUpsertLimitExceptionMutation, useDeleteLimitExceptionMutation,
-  useUserScheduleMutation, useAllSchedulesMutation,
+  useUserScheduleMutation, useAvailableShiftsMutation, useAllSchedulesMutation,
   useCreateShiftMutation, useUpdateShiftMutation, useDeleteShiftMutation,
   useCreateChangeRequestMutation, useChangeRequestsQuery, useProcessChangeRequestMutation,
   useShiftStatsQuery,

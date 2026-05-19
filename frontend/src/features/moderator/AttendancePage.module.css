@@ -7,7 +7,11 @@
   padding: 8px 12px; border: 1.5px solid #e2e8f0; border-radius: 10px;
   font-size: 14px; outline: none; background: #fff; cursor: pointer;
 }
-.dateInput:focus { border-color: #6366f1; }
+.dateInput:focus, .searchInput:focus { border-color: #6366f1; }
+.searchInput {
+  padding: 8px 12px; border: 1.5px solid #e2e8f0; border-radius: 10px;
+  font-size: 14px; outline: none; background: #fff; min-width: 220px;
+}
 .refreshBtn {
   padding: 8px 16px; background: #eff6ff; color: #6366f1;
   border: 1px solid #c7d2fe; border-radius: 10px; font-size: 14px;
@@ -57,7 +61,7 @@
 @media (max-width: 768px) {
   .head { flex-direction: column; }
   .controls { width: 100%; }
-  .dateInput { flex: 1; }
+  .dateInput, .searchInput { flex: 1; min-width: 0; }
   .userCards { grid-template-columns: 1fr; }
   .tableWrap { overflow-x: auto; }
   .table { min-width: 500px; }

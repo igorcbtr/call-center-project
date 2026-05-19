@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
-import { useWorkLogsQuery } from '../../api/api';
+import { useEmployeesQuery, useWorkLogsQuery } from '../../api/api';
+import { useAuth } from '../../hooks/useAuth';
 import styles from './AttendancePage.module.css';
 
 const eventLabels: Record<string, string> = {
@@ -16,22 +17,38 @@ const eventColors: Record<string, string> = {
 
 export function AttendancePage() {
   const today = new Date().toISOString().slice(0, 10);
+  const { role } = useAuth();
+  const canSeeAll = role === 'admin' || role === 'moderator';
   const [date, setDate] = useState(today);
+  const [userFilter, setUserFilter] = useState('');
+  const [eventFilter, setEventFilter] = useState('');
+  const [search, setSearch] = useState('');
 
-  const { data: logs = [], isLoading, refetch } = useWorkLogsQuery({ date });
+  const { data: employees = [] } = useEmployeesQuery(undefined, { skip: !canSeeAll });
+  const { data: logs = [], isLoading, refetch } = useWorkLogsQuery({
+    date,
+    user_id: userFilter ? Number(userFilter) : undefined,
+  });
 
   useEffect(() => { queueMicrotask(() => void refetch()); }, [date, refetch]);
 
   // Group by user
-  const byUser = logs.reduce<Record<string, typeof logs>>((acc, log) => {
+  const filteredLogs = logs.filter(log => {
+    const q = search.trim().toLowerCase();
+    if (eventFilter && log.event_type !== eventFilter) return false;
+    if (q && !`${log.user_fio || log.fio || ''} ${log.place || ''}`.toLowerCase().includes(q)) return false;
+    return true;
+  });
+
+  const byUser = filteredLogs.reduce<Record<string, typeof logs>>((acc, log) => {
     const key = log.user_fio || log.fio || `ID:${log.user_id}`;
     if (!acc[key]) acc[key] = [];
     acc[key].push(log);
     return acc;
   }, {});
 
-  const totalIn  = logs.filter(l => l.event_type === 'check_in').length;
-  const totalOut = logs.filter(l => l.event_type === 'check_out').length;
+  const totalIn  = filteredLogs.filter(l => l.event_type === 'check_in').length;
+  const totalOut = filteredLogs.filter(l => l.event_type === 'check_out').length;
 
   return (
     <div className={styles.page}>
@@ -46,6 +63,23 @@ export function AttendancePage() {
             className={styles.dateInput}
             value={date}
             onChange={e => setDate(e.target.value)}
+          />
+          {canSeeAll && (
+            <select className={styles.dateInput} value={userFilter} onChange={e => setUserFilter(e.target.value)}>
+              <option value="">Все сотрудники</option>
+              {employees.map(u => <option key={u.id} value={u.id}>{u.fio}</option>)}
+            </select>
+          )}
+          <select className={styles.dateInput} value={eventFilter} onChange={e => setEventFilter(e.target.value)}>
+            <option value="">Все события</option>
+            <option value="check_in">Вход</option>
+            <option value="check_out">Выход</option>
+          </select>
+          <input
+            className={styles.searchInput}
+            placeholder="Поиск по имени или месту…"
+            value={search}
+            onChange={e => setSearch(e.target.value)}
           />
           <button className={styles.refreshBtn} onClick={() => void refetch()} disabled={isLoading}>
             {isLoading ? '…' : '↻ Обновить'}
@@ -68,14 +102,14 @@ export function AttendancePage() {
           <span className={styles.summaryLabel}>Сотрудников</span>
         </div>
         <div className={styles.summaryCard}>
-          <span className={styles.summaryNum} style={{ color: '#475569' }}>{logs.length}</span>
+          <span className={styles.summaryNum} style={{ color: '#475569' }}>{filteredLogs.length}</span>
           <span className={styles.summaryLabel}>Всего событий</span>
         </div>
       </div>
 
       {isLoading ? (
         <div className={styles.empty}>Загрузка…</div>
-      ) : logs.length === 0 ? (
+      ) : filteredLogs.length === 0 ? (
         <div className={styles.emptyState}>
           <div className={styles.emptyIcon}>📋</div>
           <p className={styles.emptyText}>Нет записей за {new Date(date + 'T00:00:00').toLocaleDateString('ru-RU')}</p>
@@ -141,7 +175,7 @@ export function AttendancePage() {
                   </tr>
                 </thead>
                 <tbody>
-                  {logs.map(log => (
+                  {filteredLogs.map(log => (
                     <tr key={log.id}>
                       <td className={styles.timeCell}>
                         {new Date(log.created_at).toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}

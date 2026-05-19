@@ -6,6 +6,7 @@ import {
   useAllSchedulesMutation, useCreateShiftMutation, useDeleteShiftMutation,
   useUpdateShiftMutation, useEmployeesQuery, useShiftTypesQuery,
   useProcessChangeRequestMutation, useChangeRequestsQuery,
+  useAvailableShiftsMutation,
 } from '../../api/api';
 import type { ChangeRequest, ShiftEntry, ShiftType, User } from '../../api/types';
 import { Button } from '../../components/common/Button';
@@ -28,6 +29,7 @@ export function ScheduleTab() {
   const [deleteShift] = useDeleteShiftMutation();
   const [updateShift] = useUpdateShiftMutation();
   const [processRequest] = useProcessChangeRequestMutation();
+  const [fetchAvailableShifts] = useAvailableShiftsMutation();
   const { data: crData, refetch: refetchCR } = useChangeRequestsQuery({ status:'pending' });
 
   const [month, setMonth] = useState(() => new Date());
@@ -101,8 +103,10 @@ export function ScheduleTab() {
   const [shiftComment, setShiftComment] = useState('');
   const [customStart, setCustomStart] = useState('');
   const [customEnd, setCustomEnd]     = useState('');
+  const [availableShiftTypes, setAvailableShiftTypes] = useState<ShiftType[]>([]);
 
-  const selShiftType = shiftTypes.find((s: ShiftType) => String(s.id) === selType);
+  const shiftOptions = availableShiftTypes.length ? availableShiftTypes : shiftTypes;
+  const selShiftType = shiftOptions.find((s: ShiftType) => String(s.id) === selType) || shiftTypes.find((s: ShiftType) => String(s.id) === selType);
 
   const openShiftModal = (date: string, user?: User, entry?: ShiftEntry) => {
     setShiftModal({ date, user, entry });
@@ -112,6 +116,26 @@ export function ScheduleTab() {
     setCustomStart(entry?.custom_start?.slice(0,5)||'');
     setCustomEnd(entry?.custom_end?.slice(0,5)||'');
   };
+
+  useEffect(() => {
+    if (!shiftModal || !selUser) {
+      setAvailableShiftTypes([]);
+      return;
+    }
+    let cancelled = false;
+    fetchAvailableShifts({ user_id: Number(selUser) }).unwrap()
+      .then(types => {
+        if (cancelled) return;
+        setAvailableShiftTypes(types);
+        if (!shiftModal.entry && types.length && !types.some(t => String(t.id) === selType)) {
+          setSelType(String(types[0].id));
+        }
+      })
+      .catch(() => {
+        if (!cancelled) toast.error('Не удалось загрузить доступные смены сотрудника');
+      });
+    return () => { cancelled = true; };
+  }, [fetchAvailableShifts, selUser, selType, shiftModal]);
 
   const saveShift = async () => {
     if (!shiftModal) return;
@@ -335,7 +359,7 @@ export function ScheduleTab() {
             {!shiftModal.user && (
               <div className={styles.field}>
                 <label className={styles.label}>Сотрудник</label>
-                <select className={styles.select} value={selUser} onChange={e => setSelUser(e.target.value)}>
+                <select className={styles.select} value={selUser} onChange={e => { setSelUser(e.target.value); setSelType(''); }}>
                   <option value="">— выберите —</option>
                   {employees.map(u => <option key={u.id} value={u.id}>{u.fio} ({roleLabels[u.role]})</option>)}
                 </select>
@@ -345,7 +369,7 @@ export function ScheduleTab() {
             <div className={styles.field}>
               <label className={styles.label}>Тип смены</label>
               <select className={styles.select} value={selType} onChange={e => setSelType(e.target.value)}>
-                {shiftTypes.map((s: ShiftType) => (
+                {shiftOptions.map((s: ShiftType) => (
                   <option key={s.id} value={s.id}>{s.name}{s.is_free?' (свободная)':` (${s.start_time?.slice(0,5)}–${s.end_time?.slice(0,5)})`}</option>
                 ))}
               </select>

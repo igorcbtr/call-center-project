@@ -71,6 +71,7 @@ export default function App() {
           <Route path="/scan"     element={<ScanPage />} />
           <Route element={<ProtectedRoute />}>
             <Route element={<Layout />}>
+              <Route path="/documents" element={<DocumentsPage />} />
               {/* Admin only */}
               <Route element={<RequireAdmin />}>
                 <Route path="/admin/employees"     element={<UsersTab />} />
@@ -80,7 +81,9 @@ export default function App() {
                 <Route path="/admin/limits"        element={<LimitsTab />} />
                 <Route path="/admin/qr"            element={<QrTab />} />
                 <Route path="/admin/stats"         element={<StatsTab />} />
+                <Route path="/admin/attendance"    element={<AttendancePage />} />
                 <Route path="/admin/tasks"         element={<TasksPage />} />
+                <Route path="/admin/documents"     element={<DocumentsPage />} />
                 <Route path="/admin"               element={<Navigate to="/admin/employees" replace />} />
               </Route>
               {/* Admin + Moderator */}
@@ -91,12 +94,13 @@ export default function App() {
                 <Route path="/mod/requests"      element={<ChangeRequestsTab />} />
                 <Route path="/mod/attendance"    element={<AttendancePage />} />
                 <Route path="/mod/tasks"         element={<TasksPage />} />
+                <Route path="/mod/documents"     element={<DocumentsPage />} />
                 <Route path="/mod"               element={<Navigate to="/mod/schedule" replace />} />
               </Route>
               {/* Staff */}
               <Route element={<RequireStaff />}>
                 <Route path="/dashboard"  element={<DashboardPage />} />
-                <Route path="/documents"  element={<DocumentsPage />} />
+                <Route path="/attendance" element={<AttendancePage />} />
                 <Route path="/tasks"      element={<TasksPage />} />
               </Route>
             </Route>

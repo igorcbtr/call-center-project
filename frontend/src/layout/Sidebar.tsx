@@ -30,6 +30,7 @@ export function Sidebar() {
     { to:'/admin/limits',    label:'Лимиты / Типы',  icon:'⚖️' },
     { to:'/admin/qr',        label:'QR-коды',        icon:'📱' },
     { to:'/admin/stats',     label:'Статистика',     icon:'📊' },
+    { to:'/admin/attendance', label:'Посещения',      icon:'🕐' },
     { to:'/admin/tasks',     label:'Задания',        icon:'📝' },
   ];
 
@@ -43,6 +44,7 @@ export function Sidebar() {
 
   const staffItems: NavItem[] = [
     { to:'/dashboard',  label:'Мой график',  icon:'📅' },
+    { to:'/attendance', label:'Посещения',   icon:'🕐' },
     { to:'/documents',  label:'Документы',   icon:'📁' },
     { to:'/tasks',      label:'Задания',     icon:'📝' },
   ];

@@ -56,7 +56,10 @@ async function main() {
     await deleteIfExists('schedule_weeks');
     await deleteIfExists('free_time');
     await deleteIfExists('work_logs');
+    await deleteIfExists('document_access');
     await deleteIfExists('user_documents');
+    await deleteIfExists('document_categories');
+    await deleteIfExists('task_attachments');
     await deleteIfExists('tasks');
     await deleteIfExists('qr_places');
     await deleteIfExists('shift_types');

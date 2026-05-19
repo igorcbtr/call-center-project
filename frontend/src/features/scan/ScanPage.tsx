@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import { useScanActionMutation, useLoginMutation } from '../../api/api';
 import type { User } from '../../api/types';
@@ -19,6 +19,7 @@ export function ScanPage() {
   const [params] = useSearchParams();
   const place = params.get('place') || 'Рабочее место';
   const code  = params.get('code') || '';
+  const navigate = useNavigate();
   const dispatch = useAppDispatch();
 
   const [scanAction, { isLoading: scanning }] = useScanActionMutation();
@@ -41,6 +42,11 @@ export function ScanPage() {
       await scanAction({ place, code, action }).unwrap();
       setDone(action);
       toast.success(action === 'in' ? '✅ Вход зафиксирован!' : '👋 Выход зафиксирован!');
+      window.setTimeout(() => {
+        if (user?.role === 'admin') navigate('/admin/attendance');
+        else if (user?.role === 'moderator') navigate('/mod/attendance');
+        else navigate('/attendance');
+      }, 1200);
     } catch { toast.error('Ошибка при отметке'); }
   };
 

@@ -15,6 +15,24 @@
 .uploadTitle { font-size: 16px; font-weight: 700; color: #1e293b; margin: 0; }
 .uploadRow { display: flex; gap: 12px; align-items: flex-end; flex-wrap: wrap; }
 .uploadFields { display: flex; flex-direction: column; gap: 10px; flex: 1; min-width: 200px; }
+.accessGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 8px;
+  max-height: 180px;
+  overflow: auto;
+  padding: 10px;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  background: #f8fafc;
+}
+.accessCheck {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  color: #334155;
+}
 .input {
   padding: 10px 14px;
   border: 1.5px solid #e2e8f0;
@@ -63,9 +81,23 @@
 .uploadBtn:disabled { opacity: 0.5; cursor: not-allowed; }
 .hint { font-size: 12px; color: #94a3b8; margin: 0; }
 
-.listSection { display: flex; flex-direction: column; gap: 14px; }
+.listSection { display: flex; flex-direction: column; gap: 16px; }
 .listHead { display: flex; justify-content: space-between; align-items: center; }
 .secTitle { font-size: 16px; font-weight: 700; color: #1e293b; margin: 0; }
+.docSection {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.categoryTitle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 15px;
+  font-weight: 700;
+  color: #334155;
+  margin: 4px 0 0;
+}
 .refreshBtn {
   background: none; border: 1px solid #e2e8f0; border-radius: 8px;
   padding: 6px 12px; font-size: 13px; color: #6366f1; cursor: pointer;

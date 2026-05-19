@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { format, startOfMonth, endOfMonth, eachDayOfInterval, getDay, addMonths, subMonths, startOfDay, isBefore } from 'date-fns';
 import { ru } from 'date-fns/locale';
 import { toast } from 'react-toastify';
-import { useUserScheduleMutation, useShiftTypesQuery, useCreateChangeRequestMutation, useAllSchedulesMutation } from '../../api/api';
+import { useUserScheduleMutation, useAvailableShiftsMutation, useCreateChangeRequestMutation, useAllSchedulesMutation } from '../../api/api';
 import type { ShiftEntry, ShiftType } from '../../api/types';
 import { useAuth } from '../../hooks/useAuth';
 import { Button } from '../../components/common/Button';
@@ -28,9 +28,10 @@ export function DashboardPage() {
 
   const [loadSchedule, { isLoading }] = useUserScheduleMutation();
   const [loadAll] = useAllSchedulesMutation();
+  const [loadAvailableShifts] = useAvailableShiftsMutation();
   const [myEntries, setMyEntries]   = useState<ShiftEntry[]>([]);
   const [allEntries, setAllEntries] = useState<ShiftEntry[]>([]);
-  const { data: shiftTypes = [] } = useShiftTypesQuery();
+  const [shiftTypes, setShiftTypes] = useState<ShiftType[]>([]);
   const [createCR] = useCreateChangeRequestMutation();
 
   const reload = useCallback(async () => {
@@ -40,12 +41,15 @@ export function DashboardPage() {
       const rows = await loadSchedule({ user_id:userId, start_date:sd, end_date:ed }).unwrap();
       setMyEntries(rows);
     } catch { toast.error('Ошибка загрузки графика'); }
+    try {
+      setShiftTypes(await loadAvailableShifts({ user_id:userId }).unwrap());
+    } catch { toast.error('Ошибка загрузки доступных смен'); }
     // also load all entries for day count display
     try {
       const res = await loadAll({ start_date:sd, end_date:ed }).unwrap();
       setAllEntries(res.entries);
     } catch { /* non-critical */ }
-  }, [loadSchedule, loadAll, userId, monthStart, monthEnd]);
+  }, [loadSchedule, loadAll, loadAvailableShifts, userId, monthStart, monthEnd]);
 
   useEffect(() => { queueMicrotask(() => void reload()); }, [reload]);
 
@@ -82,7 +86,8 @@ export function DashboardPage() {
 
   const submitCR = async () => {
     if (!crModal||!userId) return;
-    if (!crComment.trim()) { toast.error('Напишите причину'); return; }
+    if (crModal.entry && !crComment.trim()) { toast.error('Напишите причину'); return; }
+    if (!crType) { toast.error('Выберите тип смены'); return; }
     try {
       await createCR({ user_id:userId, shift_entry_id:crModal.entry?.id, requested_date:crModal.date, requested_shift_type_id:Number(crType)||undefined, type:crModal.entry?'edit':'new', user_comment:crComment }).unwrap();
       toast.success('✅ Заявка отправлена'); setCrModal(null);
@@ -227,8 +232,8 @@ export function DashboardPage() {
               </select>
             </div>
             <div className={styles.field}>
-              <label className={styles.label}>Причина *</label>
-              <textarea className={styles.textarea} rows={3} value={crComment} onChange={e => setCrComment(e.target.value)} placeholder="Опишите причину запроса…" />
+              <label className={styles.label}>{crModal.entry ? 'Причина *' : 'Комментарий'}</label>
+              <textarea className={styles.textarea} rows={3} value={crComment} onChange={e => setCrComment(e.target.value)} placeholder={crModal.entry ? 'Опишите причину изменения…' : 'Комментарий необязателен'} />
             </div>
             <div className={styles.crNote}>⚠️ Заявка будет рассмотрена администратором. Вы получите уведомление о решении.</div>
           </div>

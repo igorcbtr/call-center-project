@@ -73,7 +73,7 @@ api.delete('/admin/qr/:id', authMw, requireRole('admin'), admin.deleteQrPlace);
 
 // Stats & logs
 api.get('/admin/stats/shifts-by-user', authMw, requireRole('admin','moderator'), admin.getShiftStatsByUser);
-api.get('/admin/work-logs',            authMw, requireRole('admin','moderator'), admin.getWorkLogs);
+api.get('/admin/work-logs',            authMw, admin.getWorkLogs);
 
 // Schedule
 api.get ('/schedule/shift-types',          authMw, grafic.getShiftTypes);
@@ -101,6 +101,8 @@ api.get ('/notifications',      authMw, grafic.getNotifications);
 api.post('/notifications/read', authMw, grafic.markNotificationsRead);
 
 // Documents
+api.get   ('/documents/categories',         authMw, docs.listCategories);
+api.post  ('/documents/categories',         authMw, requireRole('admin','moderator'), docs.createCategory);
 api.get   ('/documents',                    authMw, docs.listDocuments);
 api.get   ('/documents/admin/:userId',      authMw, requireRole('admin','moderator'), docs.listDocumentsAdmin);
 api.post  ('/documents/upload',             authMw, docs.upload.single('file'), docs.uploadDocument);
@@ -108,10 +110,13 @@ api.get   ('/documents/:id/download',       authMw, docs.downloadDocument);
 api.delete('/documents/:id',                authMw, docs.deleteDocument);
 
 // Tasks
-api.get   ('/tasks',     authMw, tasks.getTasks);
-api.post  ('/tasks',     authMw, tasks.createTask);
-api.put   ('/tasks/:id', authMw, tasks.updateTask);
-api.delete('/tasks/:id', authMw, requireRole('admin','moderator'), tasks.deleteTask);
+api.get   ('/tasks',                                  authMw, tasks.getTasks);
+api.post  ('/tasks',                                  authMw, tasks.createTask);
+api.post  ('/tasks/:id/attachments',                  authMw, tasks.upload.array('files', 5), tasks.uploadTaskAttachments);
+api.get   ('/tasks/attachments/:attachmentId/download', authMw, tasks.downloadTaskAttachment);
+api.delete('/tasks/attachments/:attachmentId',        authMw, tasks.deleteTaskAttachment);
+api.put   ('/tasks/:id',                              authMw, tasks.updateTask);
+api.delete('/tasks/:id',                              authMw, requireRole('admin','moderator'), tasks.deleteTask);
 
 app.use('/api', api);
 app.listen(PORT, () => {

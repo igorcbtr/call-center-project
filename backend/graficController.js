@@ -16,10 +16,42 @@ async function notifyUser(userId, title, body, kind, refId, refType) {
   } catch(e) { console.error('notify error', e.message); }
 }
 
+async function getAvailableShiftTypesForUser(userId) {
+  const r = await pool.query(`
+    SELECT DISTINCT st.*
+    FROM shift_types st
+    JOIN users u ON u.id=$1
+    LEFT JOIN shift_type_roles str ON str.shift_type_id=st.id
+    LEFT JOIN shift_limit_type_exceptions slte ON slte.shift_type_id=st.id AND slte.user_id=u.id
+    LEFT JOIN shift_type_user_overrides allow_o ON allow_o.shift_type_id=st.id AND allow_o.user_id=u.id AND allow_o.type='allow'
+    LEFT JOIN shift_type_user_overrides deny_o ON deny_o.shift_type_id=st.id AND deny_o.user_id=u.id AND deny_o.type='deny'
+    WHERE st.is_active=true
+      AND deny_o.id IS NULL
+      AND (str.role=u.role OR slte.id IS NOT NULL OR allow_o.id IS NOT NULL)
+    ORDER BY st.is_free ASC, st.start_time ASC NULLS LAST, st.name ASC
+  `, [userId]);
+  return r.rows;
+}
+
+async function userCanUseShiftType(userId, shiftTypeId) {
+  const r = await pool.query(`
+    SELECT 1
+    FROM shift_types st
+    JOIN users u ON u.id=$1
+    LEFT JOIN shift_type_roles str ON str.shift_type_id=st.id AND str.role=u.role
+    LEFT JOIN shift_limit_type_exceptions slte ON slte.shift_type_id=st.id AND slte.user_id=u.id
+    LEFT JOIN shift_type_user_overrides allow_o ON allow_o.shift_type_id=st.id AND allow_o.user_id=u.id AND allow_o.type='allow'
+    LEFT JOIN shift_type_user_overrides deny_o ON deny_o.shift_type_id=st.id AND deny_o.user_id=u.id AND deny_o.type='deny'
+    WHERE st.id=$2 AND st.is_active=true AND deny_o.id IS NULL
+      AND (str.id IS NOT NULL OR slte.id IS NOT NULL OR allow_o.id IS NOT NULL)
+    LIMIT 1
+  `, [userId, shiftTypeId]);
+  return r.rows.length > 0;
+}
+
 exports.getShiftTypes = async (req, res) => {
   try {
-    const r = await pool.query('SELECT * FROM shift_types WHERE is_active=true ORDER BY is_free ASC, start_time ASC NULLS LAST');
-    res.json(r.rows);
+    res.json(await getAvailableShiftTypesForUser(req.user.id));
   } catch(err) { res.status(500).json({ message: 'Ошибка' }); }
 };
 
@@ -34,8 +66,10 @@ exports.getAvailableShifts = async (req, res) => {
   const { user_id } = req.body;
   if (!user_id) return res.status(400).json({ message: 'user_id обязателен' });
   try {
-    const r = await pool.query('SELECT * FROM shift_types WHERE is_active=true ORDER BY is_free ASC, start_time ASC NULLS LAST');
-    res.json(r.rows);
+    const uid = parseInt(user_id, 10);
+    if (!['admin','moderator'].includes(req.user.role) && req.user.id !== uid)
+      return res.status(403).json({ message: 'Нет доступа' });
+    res.json(await getAvailableShiftTypesForUser(uid));
   } catch(err) { res.status(500).json({ message: 'Ошибка' }); }
 };
 
@@ -47,6 +81,8 @@ exports.createShiftEntry = async (req, res) => {
   try {
     const stRes = await pool.query('SELECT * FROM shift_types WHERE id=$1', [shift_type_id]);
     if (!stRes.rows.length) return res.status(404).json({ message: 'Тип смены не найден' });
+    if (!(await userCanUseShiftType(uid, shift_type_id)))
+      return res.status(403).json({ message: 'Этот тип смены недоступен выбранному сотруднику' });
     const st = stRes.rows[0];
 
     const today = new Date(date);
@@ -83,6 +119,10 @@ exports.updateShiftEntry = async (req, res) => {
   try {
     const stRes = await pool.query('SELECT is_free,name FROM shift_types WHERE id=$1',[shift_type_id]);
     const isFree = stRes.rows[0]?.is_free;
+    const entryRes = await pool.query('SELECT user_id FROM shift_entries WHERE id=$1', [id]);
+    if (!entryRes.rows.length) return res.status(404).json({ message: 'Не найдено' });
+    if (!(await userCanUseShiftType(entryRes.rows[0].user_id, shift_type_id)))
+      return res.status(403).json({ message: 'Этот тип смены недоступен выбранному сотруднику' });
     const r = await pool.query(
       'UPDATE shift_entries SET shift_type_id=$1,comment=$2,custom_start=$3,custom_end=$4 WHERE id=$5 RETURNING *',
       [shift_type_id, comment||null, isFree?(custom_start||null):null, isFree?(custom_end||null):null, id]);
@@ -210,6 +250,8 @@ exports.createChangeRequest = async (req, res) => {
   const { user_id, shift_entry_id, requested_date, requested_shift_type_id, type, user_comment } = req.body;
   if (!user_id||!type) return res.status(400).json({ message: 'user_id и type обязательны' });
   try {
+    if (requested_shift_type_id && !(await userCanUseShiftType(user_id, requested_shift_type_id)))
+      return res.status(403).json({ message: 'Этот тип смены недоступен для вашей роли' });
     const r = await pool.query(
       `INSERT INTO change_requests (user_id,shift_entry_id,requested_date,requested_shift_type_id,type,user_comment,status)
        VALUES ($1,$2,$3,$4,$5,$6,'pending') RETURNING *`,
@@ -252,6 +294,10 @@ exports.processChangeRequest = async (req, res) => {
     if (!crRes.rows.length) throw new Error('Не найдено');
     const cr = crRes.rows[0];
     const stId = new_shift_type_id||cr.requested_shift_type_id;
+    if (status==='approved' && stId && !(await userCanUseShiftType(cr.user_id, stId))) {
+      await pool.query('ROLLBACK');
+      return res.status(403).json({ message: 'Этот тип смены недоступен сотруднику' });
+    }
 
     if (status==='approved') {
       if (cr.type==='edit'&&cr.shift_entry_id&&stId)

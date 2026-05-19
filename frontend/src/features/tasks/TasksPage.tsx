@@ -17,9 +17,21 @@ interface Task {
   status: 'assigned' | 'in_progress' | 'done' | 'suggested' | 'rejected';
   created_at: string;
   updated_at: string;
+  attachments?: TaskAttachment[];
 }
 
 interface Employee { id: number; fio: string; role: string; }
+
+interface TaskAttachment {
+  id: number;
+  task_id: number;
+  uploaded_by?: number;
+  uploaded_by_fio?: string;
+  original_name: string;
+  mime_type?: string;
+  file_size?: number;
+  created_at: string;
+}
 
 const baseUrl = import.meta.env.VITE_API_URL || 'http://localhost:3002/api';
 function getToken() { return localStorage.getItem('mvp_token') || ''; }
@@ -53,6 +65,7 @@ export function TasksPage() {
   const [filterStatus, setFilterStatus] = useState('');
   const [showForm, setShowForm] = useState(false);
   const [editTask, setEditTask] = useState<Task | null>(null);
+  const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
 
   const [form, setForm] = useState({
     title: '', description: '', assigned_to: '', due_date: '', priority: 'normal', status: 'assigned',
@@ -90,12 +103,14 @@ export function TasksPage() {
 
   const openCreate = () => {
     setEditTask(null);
+    setSelectedFiles([]);
     setForm({ title: '', description: '', assigned_to: '', due_date: '', priority: 'normal', status: 'assigned' });
     setShowForm(true);
   };
 
   const openEdit = (t: Task) => {
     setEditTask(t);
+    setSelectedFiles([]);
     setForm({
       title: t.title,
       description: t.description || '',
@@ -105,6 +120,19 @@ export function TasksPage() {
       status: t.status,
     });
     setShowForm(true);
+  };
+
+  const uploadFiles = async (taskId: number) => {
+    if (!selectedFiles.length) return;
+    const fd = new FormData();
+    selectedFiles.forEach(file => fd.append('files', file));
+    const res = await fetch(`${baseUrl}/tasks/${taskId}/attachments`, {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${getToken()}` },
+      body: fd,
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.message || 'Ошибка загрузки файлов');
   };
 
   const handleSave = async () => {
@@ -137,7 +165,10 @@ export function TasksPage() {
       }
       const data = await res.json();
       if (!res.ok) throw new Error(data.message || 'Ошибка');
+      const taskId = editTask?.id || data.task?.id;
+      if (taskId) await uploadFiles(taskId);
       toast.success(editTask ? 'Обновлено' : 'Создано');
+      setSelectedFiles([]);
       setShowForm(false);
       void fetchTasks();
     } catch (e: unknown) { toast.error(errorMessage(e, 'Ошибка')); }
@@ -167,6 +198,43 @@ export function TasksPage() {
       toast.success('Удалено');
       setTasks(prev => prev.filter(t => t.id !== task.id));
     } catch { toast.error('Ошибка'); }
+  };
+
+  const handleDownloadAttachment = async (attachment: TaskAttachment) => {
+    try {
+      const res = await fetch(`${baseUrl}/tasks/attachments/${attachment.id}/download`, {
+        headers: { Authorization: `Bearer ${getToken()}` },
+      });
+      if (!res.ok) throw new Error();
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = attachment.original_name;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+    } catch { toast.error('Ошибка скачивания файла'); }
+  };
+
+  const handleDeleteAttachment = async (attachment: TaskAttachment) => {
+    if (!window.confirm(`Удалить файл «${attachment.original_name}»?`)) return;
+    try {
+      const res = await fetch(`${baseUrl}/tasks/attachments/${attachment.id}`, {
+        method: 'DELETE',
+        headers: { Authorization: `Bearer ${getToken()}` },
+      });
+      if (!res.ok) throw new Error();
+      toast.success('Файл удалён');
+      void fetchTasks();
+    } catch { toast.error('Ошибка удаления файла'); }
+  };
+
+  const formatSize = (bytes?: number) => {
+    if (!bytes) return '';
+    if (bytes < 1024 * 1024) return `${Math.ceil(bytes / 1024)} КБ`;
+    return `${(bytes / 1024 / 1024).toFixed(1)} МБ`;
   };
 
   const filtered = tasks.filter(t => !filterStatus || t.status === filterStatus);
@@ -234,6 +302,33 @@ export function TasksPage() {
                     )}
                     <span className={styles.metaItem}>🕐 {new Date(task.created_at).toLocaleDateString('ru-RU')}</span>
                   </div>
+                  {!!task.attachments?.length && (
+                    <div className={styles.attachments}>
+                      {task.attachments.map(attachment => (
+                        <div key={attachment.id} className={styles.attachment}>
+                          <button
+                            type="button"
+                            className={styles.attachmentLink}
+                            onClick={() => void handleDownloadAttachment(attachment)}
+                            title="Скачать файл"
+                          >
+                            📎 {attachment.original_name}
+                          </button>
+                          <span className={styles.attachmentMeta}>{formatSize(attachment.file_size)}</span>
+                          {(isAdmin || attachment.uploaded_by === userId) && (
+                            <button
+                              type="button"
+                              className={styles.attachmentDelete}
+                              onClick={() => void handleDeleteAttachment(attachment)}
+                              title="Удалить файл"
+                            >
+                              ✕
+                            </button>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  )}
                   <div className={styles.taskActions}>
                     {/* Status change for assigned employee */}
                     {isMyTask && task.status === 'assigned' && (
@@ -314,6 +409,19 @@ export function TasksPage() {
                   </select>
                 </div>
               )}
+              <div className={styles.field}>
+                <label className={styles.label}>Файлы</label>
+                <label className={styles.filePicker}>
+                  <input
+                    type="file"
+                    multiple
+                    className={styles.fileInput}
+                    onChange={e => setSelectedFiles(Array.from(e.target.files || []))}
+                  />
+                  <span>{selectedFiles.length ? selectedFiles.map(file => file.name).join(', ') : 'Выбрать файлы'}</span>
+                </label>
+                <p className={styles.fileHint}>До 5 файлов, по 20 МБ каждый.</p>
+              </div>
             </div>
             <div className={styles.modalFooter}>
               <button className={styles.cancelBtn} onClick={() => setShowForm(false)}>Отмена</button>

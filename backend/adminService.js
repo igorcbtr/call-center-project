@@ -421,6 +421,18 @@ exports.scanAction = async (req, res) => {
   const { place, code, action } = req.body;
   if (!place||!['in','out'].includes(action)) return res.status(400).json({ message: 'place и action обязательны' });
   try {
+    const latest = await pool.query(
+      `SELECT event_type FROM work_logs
+       WHERE user_id=$1 AND DATE(created_at)=CURRENT_DATE AND event_type IN ('check_in','check_out')
+       ORDER BY created_at DESC LIMIT 1`,
+      [req.user.id]
+    );
+    const latestEvent = latest.rows[0]?.event_type;
+    if (action === 'in' && latestEvent === 'check_in')
+      return res.status(400).json({ message: 'Вы уже отметили вход. Сначала отметьте выход.' });
+    if (action === 'out' && latestEvent !== 'check_in')
+      return res.status(400).json({ message: 'Нельзя отметить выход без активного входа.' });
+
     await pool.query(
       'INSERT INTO work_logs (user_id,fio,place,event_type) VALUES ($1,$2,$3,$4)',
       [req.user?.id||null, req.user?.fio||null, place, action==='in'?'check_in':'check_out']);
@@ -431,10 +443,12 @@ exports.scanAction = async (req, res) => {
 exports.getWorkLogs = async (req, res) => {
   const { date, user_id } = req.query;
   try {
+    const canSeeAll = ['admin','moderator'].includes(req.user.role);
     let q = `SELECT wl.*,u.fio as user_fio,u.role as user_role FROM work_logs wl LEFT JOIN users u ON u.id=wl.user_id WHERE 1=1`;
     const params = [];
     if (date) { params.push(date); q += ` AND DATE(wl.created_at)=$${params.length}`; }
-    if (user_id) { params.push(user_id); q += ` AND wl.user_id=$${params.length}`; }
+    if (canSeeAll && user_id) { params.push(user_id); q += ` AND wl.user_id=$${params.length}`; }
+    if (!canSeeAll) { params.push(req.user.id); q += ` AND wl.user_id=$${params.length}`; }
     q += ' ORDER BY wl.created_at DESC LIMIT 200';
     res.json((await pool.query(q, params)).rows);
   } catch(err) { res.status(500).json({ message: 'Ошибка' }); }
