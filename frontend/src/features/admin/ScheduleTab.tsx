@@ -103,9 +103,9 @@ export function ScheduleTab() {
   const [shiftComment, setShiftComment] = useState('');
   const [customStart, setCustomStart] = useState('');
   const [customEnd, setCustomEnd]     = useState('');
-  const [availableShiftTypes, setAvailableShiftTypes] = useState<ShiftType[]>([]);
+  const [availableShiftTypes, setAvailableShiftTypes] = useState<{ userId:string; types:ShiftType[] }|null>(null);
 
-  const shiftOptions = availableShiftTypes.length ? availableShiftTypes : shiftTypes;
+  const shiftOptions = selUser && availableShiftTypes?.userId === selUser && availableShiftTypes.types.length ? availableShiftTypes.types : shiftTypes;
   const selShiftType = shiftOptions.find((s: ShiftType) => String(s.id) === selType) || shiftTypes.find((s: ShiftType) => String(s.id) === selType);
 
   const openShiftModal = (date: string, user?: User, entry?: ShiftEntry) => {
@@ -118,15 +118,12 @@ export function ScheduleTab() {
   };
 
   useEffect(() => {
-    if (!shiftModal || !selUser) {
-      setAvailableShiftTypes([]);
-      return;
-    }
+    if (!shiftModal || !selUser) return;
     let cancelled = false;
     fetchAvailableShifts({ user_id: Number(selUser) }).unwrap()
       .then(types => {
         if (cancelled) return;
-        setAvailableShiftTypes(types);
+        setAvailableShiftTypes({ userId: selUser, types });
         if (!shiftModal.entry && types.length && !types.some(t => String(t.id) === selType)) {
           setSelType(String(types[0].id));
         }
