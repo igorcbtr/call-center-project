@@ -24,6 +24,7 @@ export function Header() {
     : undefined;
   const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:3002/api';
   const docsPath = apiUrl.replace('/api', '/docs');
+  const knowledgePath = knowledgeUrl || docsPath;
 
   return (
     <header className={styles.header}>
@@ -47,17 +48,15 @@ export function Header() {
           >
             📚 Документация
           </a>
-          {knowledgeUrl && (
-            <a
-              className={styles.knowledgeLink}
-              href={knowledgeUrl}
-              target="_blank"
-              rel="noreferrer"
-              title="База знаний"
-            >
-              💡 База знаний
-            </a>
-          )}
+          <a
+            className={styles.knowledgeLink}
+            href={knowledgePath}
+            target="_blank"
+            rel="noreferrer"
+            title="База знаний"
+          >
+            💡 База знаний
+          </a>
           <NotificationBell />
           <span className={styles.userInfo}>
             <span className={styles.userFio}>{fio}</span>
@@ -88,17 +87,15 @@ export function Header() {
           >
             📚 Документация
           </a>
-          {knowledgeUrl && (
-            <a
-              className={styles.mobileLink}
-              href={knowledgeUrl}
-              target="_blank"
-              rel="noreferrer"
-              onClick={() => setMenuOpen(false)}
-            >
-              💡 База знаний
-            </a>
-          )}
+          <a
+            className={styles.mobileLink}
+            href={knowledgePath}
+            target="_blank"
+            rel="noreferrer"
+            onClick={() => setMenuOpen(false)}
+          >
+            💡 База знаний
+          </a>
           <div className={styles.mobileSep} />
           <span className={styles.mobileFio}>{fio}</span>
           <button type="button" className={styles.mobileLogout} onClick={onLogout}>
