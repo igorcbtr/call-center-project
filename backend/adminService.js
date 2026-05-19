@@ -127,14 +127,18 @@ exports.updateEmployee = async (req, res) => {
   const id = parseInt(req.params.id, 10);
   const { fio, role, status, username } = req.body;
   if (!fio||!role) return res.status(400).json({ message: 'ФИО и роль обязательны' });
-  if (req.user.role==='moderator' && ['admin','moderator'].includes(role))
-    return res.status(403).json({ message: 'Нет прав' });
   try {
     const old = await pool.query('SELECT fio,role FROM users WHERE id=$1', [id]);
+    if (!old.rows.length) return res.status(404).json({ message: 'Не найден' });
+    if (req.user.role==='moderator') {
+      if (['admin','moderator'].includes(old.rows[0].role))
+        return res.status(403).json({ message: 'Модератор не может менять администраторов и модераторов' });
+      if (['admin','moderator'].includes(role))
+        return res.status(403).json({ message: 'Модератор не может назначать роли администратора и модератора' });
+    }
     const r = await pool.query(
       'UPDATE users SET fio=$1,role=$2,status=$3,username=COALESCE(NULLIF($4,\'\'),username) WHERE id=$5 RETURNING id,username,fio,role,status',
       [fio.trim(), role, status!==false, username||'', id]);
-    if (!r.rows.length) return res.status(404).json({ message: 'Не найден' });
     await audit(req.user.id, req.user.fio, id, fio, 'update_user',
       { old: old.rows[0], new: { fio, role, status } });
     res.json({ message: 'Обновлено', employee: r.rows[0] });

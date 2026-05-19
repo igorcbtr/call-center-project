@@ -256,7 +256,9 @@ npm run dev</code></pre>
           <div class="role-perms">
             <span class="perm">Полный доступ ко всем разделам</span>
             <span class="perm">Создание/удаление сотрудников</span>
+            <span class="perm">Полные профили сотрудников, комментарии, тесты, история</span>
             <span class="perm">Управление графиком всех</span>
+            <span class="perm">Документы: разделы, PDF, доступ всем или выбранным</span>
             <span class="perm">Рассмотрение заявок на изменение</span>
             <span class="perm">Просмотр статистики</span>
           </div>
@@ -264,10 +266,11 @@ npm run dev</code></pre>
         <div class="role-card">
           <div class="role-name">🟠 <span class="role-chip chip-mod">moderator</span> Модератор/Супервайзер</div>
           <div class="role-perms">
-            <span class="perm">Просмотр своего графика</span>
-            <span class="perm">Запросы на изменение смены</span>
-            <span class="perm">Доступ к базе знаний</span>
-            <span class="perm">Запись свободного времени</span>
+            <span class="perm">Просмотр сотрудников и полных профилей</span>
+            <span class="perm">Комментарии и результаты тестов</span>
+            <span class="perm">График, заявки и посещения</span>
+            <span class="perm">Документы: разделы, PDF и управление доступом</span>
+            <span class="perm">Не может менять администраторов и модераторов</span>
           </div>
         </div>
         <div class="role-card">
@@ -307,8 +310,20 @@ npm run dev</code></pre>
         <tr><th>Действие</th><th>Описание</th></tr>
         <tr><td>Добавить сотрудника</td><td>Кнопка в правом верхнем углу. Укажите ФИО, роль, логин, пароль.</td></tr>
         <tr><td>Редактировать</td><td>Иконка карандаша в строке сотрудника. Можно изменить ФИО, роль, статус.</td></tr>
+        <tr><td>Открыть профиль</td><td>Клик по строке сотрудника. В профиле доступны смены, посещения, комментарии, тесты и история.</td></tr>
         <tr><td>Удалить</td><td>Иконка корзины. Требует подтверждения.</td></tr>
         <tr><td>Сбросить пароль</td><td>Кнопка в форме редактирования. Пароль очищается, сотрудник регистрируется заново.</td></tr>
+      </table>
+      <div class="alert alert-info">💡 Модератор тоже может открывать профили сотрудников, писать комментарии и добавлять результаты тестов, но не может менять администраторов и других модераторов или назначать эти роли.</div>
+
+      <h3>Документы</h3>
+      <p>Раздел «Документы» доступен всем ролям. Администратор и модератор управляют базой документов:</p>
+      <table>
+        <tr><th>Действие</th><th>Описание</th></tr>
+        <tr><td>Добавить раздел</td><td>Введите название раздела и сохраните его.</td></tr>
+        <tr><td>Загрузить файл</td><td>Разрешены только PDF-файлы.</td></tr>
+        <tr><td>Настроить доступ</td><td>Выберите «всем» или конкретных сотрудников.</td></tr>
+        <tr><td>Просмотр сотрудниками</td><td>Сотрудники могут только смотреть и скачивать доступные им документы.</td></tr>
       </table>
 
       <h3>Управление графиком</h3>
@@ -342,7 +357,7 @@ npm run dev</code></pre>
         <div class="step-num">2</div>
         <div class="step-body">
           <div class="step-title">Запрос изменения смены</div>
-          <div class="step-text">Нажмите «✏️ Запросить изменение» на нужной смене или «+ Запросить смену» для новой. Укажите желаемую дату, тип смены и причину. Заявка отправляется администратору.</div>
+          <div class="step-text">Нажмите «✏️ Запросить изменение» на нужной смене или «+ Запросить смену» для новой. Для новой смены достаточно выбрать дату и тип; причина нужна при запросе редактирования. Заявка отправляется администратору и модератору.</div>
         </div>
       </div>
       <div class="step">
@@ -374,7 +389,7 @@ npm run dev</code></pre>
       </table>
 
       <h3>Лимиты смен</h3>
-      <p>Раздел «Лимиты» — настройка максимального количества смен в неделю по ролям:</p>
+      <p>Раздел «Лимиты / Типы» — настройка количества смен в неделю по ролям и доступности типов смен. Если тип смены разрешён только операторам, остальные роли не увидят его в выборе, а сервер дополнительно запретит такую заявку или назначение.</p>
       <table>
         <tr><th>Роль</th><th>По умолчанию</th></tr>
         <tr><td>Администратор</td><td>99 (без ограничений)</td></tr>
@@ -429,7 +444,7 @@ npm run dev</code></pre>
         <tr><td>Смена удалена администратором</td><td>Сотруднику</td><td>⚠️</td></tr>
         <tr><td>Неделя подтверждена</td><td>Всем сотрудникам недели</td><td>✅</td></tr>
       </table>
-      <div class="alert alert-info">💡 Уведомления обновляются каждые 30 секунд автоматически.</div>
+      <div class="alert alert-info">💡 Уведомления и счётчик на колокольчике обновляются автоматически; у админа и модератора счётчик также учитывает ожидающие заявки.</div>
     </section>
 
     <!-- FREE TIME -->
@@ -463,23 +478,25 @@ npm run dev</code></pre>
       <div class="api-endpoint"><span class="method m-post">POST</span><span class="endpoint-path">/api/register</span><span class="endpoint-desc">Регистрация</span></div>
       <div class="api-endpoint"><span class="method m-get">GET</span><span class="endpoint-path">/api/auth/me</span><span class="endpoint-desc">Текущий пользователь</span></div>
 
-      <h3>Сотрудники (admin only)</h3>
-      <div class="api-endpoint"><span class="method m-get">GET</span><span class="endpoint-path">/api/admin/employees</span><span class="endpoint-desc">Список сотрудников</span></div>
-      <div class="api-endpoint"><span class="method m-post">POST</span><span class="endpoint-path">/api/admin/employees</span><span class="endpoint-desc">Создать сотрудника</span></div>
-      <div class="api-endpoint"><span class="method m-put">PUT</span><span class="endpoint-path">/api/admin/employees/:id</span><span class="endpoint-desc">Обновить сотрудника</span></div>
-      <div class="api-endpoint"><span class="method m-delete">DELETE</span><span class="endpoint-path">/api/admin/employees/:id</span><span class="endpoint-desc">Удалить сотрудника</span></div>
+      <h3>Сотрудники</h3>
+      <div class="api-endpoint"><span class="method m-get">GET</span><span class="endpoint-path">/api/admin/employees</span><span class="endpoint-desc">Список сотрудников (admin/moderator)</span></div>
+      <div class="api-endpoint"><span class="method m-get">GET</span><span class="endpoint-path">/api/admin/employees/:id</span><span class="endpoint-desc">Профиль сотрудника со сменами, посещениями, комментариями и тестами</span></div>
+      <div class="api-endpoint"><span class="method m-post">POST</span><span class="endpoint-path">/api/admin/employees</span><span class="endpoint-desc">Создать сотрудника (модератор — только staff-роли)</span></div>
+      <div class="api-endpoint"><span class="method m-put">PUT</span><span class="endpoint-path">/api/admin/employees/:id</span><span class="endpoint-desc">Обновить сотрудника (модератор не меняет admin/moderator)</span></div>
+      <div class="api-endpoint"><span class="method m-delete">DELETE</span><span class="endpoint-path">/api/admin/employees/:id</span><span class="endpoint-desc">Удалить сотрудника (admin only)</span></div>
+      <div class="api-endpoint"><span class="method m-post">POST</span><span class="endpoint-path">/api/admin/employees/:id/comments</span><span class="endpoint-desc">Добавить комментарий (admin/moderator)</span></div>
 
       <h3>График</h3>
-      <div class="api-endpoint"><span class="method m-post">POST</span><span class="endpoint-path">/api/schedule/all-schedules</span><span class="endpoint-desc">Все смены за период (admin)</span></div>
+      <div class="api-endpoint"><span class="method m-post">POST</span><span class="endpoint-path">/api/schedule/all-schedules</span><span class="endpoint-desc">Все смены за период (admin/moderator)</span></div>
       <div class="api-endpoint"><span class="method m-post">POST</span><span class="endpoint-path">/api/schedule/user-schedule</span><span class="endpoint-desc">Смены пользователя</span></div>
       <div class="api-endpoint"><span class="method m-post">POST</span><span class="endpoint-path">/api/schedule/entries</span><span class="endpoint-desc">Создать смену</span></div>
-      <div class="api-endpoint"><span class="method m-put">PUT</span><span class="endpoint-path">/api/schedule/entries/:id</span><span class="endpoint-desc">Обновить смену (admin)</span></div>
-      <div class="api-endpoint"><span class="method m-post">POST</span><span class="endpoint-path">/api/schedule/delete-entry</span><span class="endpoint-desc">Удалить смену (admin)</span></div>
+      <div class="api-endpoint"><span class="method m-put">PUT</span><span class="endpoint-path">/api/schedule/entries/:id</span><span class="endpoint-desc">Обновить смену (admin/moderator)</span></div>
+      <div class="api-endpoint"><span class="method m-post">POST</span><span class="endpoint-path">/api/schedule/delete-entry</span><span class="endpoint-desc">Удалить смену (admin/moderator)</span></div>
 
       <h3>Заявки на изменение</h3>
       <div class="api-endpoint"><span class="method m-post">POST</span><span class="endpoint-path">/api/schedule/change-requests</span><span class="endpoint-desc">Создать заявку</span></div>
-      <div class="api-endpoint"><span class="method m-get">GET</span><span class="endpoint-path">/api/schedule/change-requests</span><span class="endpoint-desc">Список заявок (admin)</span></div>
-      <div class="api-endpoint"><span class="method m-post">POST</span><span class="endpoint-path">/api/schedule/process-request</span><span class="endpoint-desc">Обработать заявку (admin)</span></div>
+      <div class="api-endpoint"><span class="method m-get">GET</span><span class="endpoint-path">/api/schedule/change-requests</span><span class="endpoint-desc">Список заявок (admin/moderator)</span></div>
+      <div class="api-endpoint"><span class="method m-post">POST</span><span class="endpoint-path">/api/schedule/process-request</span><span class="endpoint-desc">Обработать заявку (admin/moderator)</span></div>
 
       <h3>Уведомления</h3>
       <div class="api-endpoint"><span class="method m-get">GET</span><span class="endpoint-path">/api/notifications</span><span class="endpoint-desc">Мои уведомления</span></div>

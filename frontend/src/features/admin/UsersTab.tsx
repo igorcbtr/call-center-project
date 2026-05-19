@@ -68,6 +68,8 @@ export function UsersTab() {
   const openCreate = () => { setEditing(null); setForm({fio:'',role:'operator',username:'',password:'',status:true}); setOpen(true); };
   const openEdit   = (u: User) => { setEditing(u); setForm({fio:u.fio,role:u.role,username:u.username||'',password:'',status:u.status}); setOpen(true); };
   const openMods   = (u: User) => { setModModal(u); setSelMods((u.moderators||[]).map(m=>m.id)); };
+  const profilePath = (userId: number) => isAdmin ? `/admin/employees/${userId}` : `/mod/employees/${userId}`;
+  const canEditUser = (u: User) => isAdmin || !['admin','moderator'].includes(u.role);
 
   const save = async () => {
     if (!form.fio.trim()) { toast.error('Введите ФИО'); return; }
@@ -127,7 +129,7 @@ export function UsersTab() {
           <tbody>
             {filtered.length===0 && <tr><td colSpan={6} className={styles.empty}>Нет сотрудников</td></tr>}
             {filtered.map(u => (
-              <tr key={u.id} className={styles.clickableRow} onClick={() => navigate(`/admin/employees/${u.id}`)}>
+              <tr key={u.id} className={styles.clickableRow} onClick={() => navigate(profilePath(u.id))}>
                 <td><span className={styles.fio}>{u.fio}</span></td>
                 <td className={styles.muted}>{u.username||'—'}</td>
                 <td><RolePill role={u.role} /></td>
@@ -141,7 +143,7 @@ export function UsersTab() {
                 <td><span className={u.status?styles.statusOn:styles.statusOff}>{u.status?'Активен':'Неактивен'}</span></td>
                 <td onClick={e => e.stopPropagation()}>
                   <div className={styles.actions}>
-                    <Button size="sm" variant="secondary" onClick={() => openEdit(u)}>Ред.</Button>
+                    {canEditUser(u) && <Button size="sm" variant="secondary" onClick={() => openEdit(u)}>Ред.</Button>}
                     {isAdmin && <Button size="sm" variant="secondary" onClick={() => doReset(u)}>Сброс пароля</Button>}
                     {isAdmin && u.id !== userId && <Button size="sm" variant="danger" onClick={() => doDelete(u)}>Удалить</Button>}
                   </div>
