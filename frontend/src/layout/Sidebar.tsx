@@ -31,6 +31,7 @@ export function Sidebar() {
     { to:'/admin/qr',        label:'QR-коды',        icon:'📱' },
     { to:'/admin/stats',     label:'Статистика',     icon:'📊' },
     { to:'/admin/attendance', label:'Посещения',      icon:'🕐' },
+    { to:'/admin/documents', label:'Документы',       icon:'📁' },
     { to:'/admin/tasks',     label:'Задания',        icon:'📝' },
   ];
 
@@ -39,6 +40,7 @@ export function Sidebar() {
     { to:'/mod/employees',  label:'Сотрудники',     icon:'👥' },
     { to:'/mod/requests',   label:'Заявки',         icon:'📋', badge: pendingCount },
     { to:'/mod/attendance', label:'Посещения',      icon:'🕐' },
+    { to:'/mod/documents',  label:'Документы',      icon:'📁' },
     { to:'/mod/tasks',      label:'Задания',        icon:'📝' },
   ];
 
