@@ -319,6 +319,7 @@ export function ScheduleTab() {
                   <span style={{ color:e.color||'#6366f1', fontWeight:700 }}>{e.shift_name}</span>
                   {(start||end) && <span className={styles.entryTime}>{start}–{end}</span>}
                   <span style={{ color:st, fontSize:12 }}>● {e.status}</span>
+                  {e.comment && <span className={styles.entryComment}>Комментарий: {e.comment}</span>}
                 </div>
                 <div className={styles.dayRowActions}>
                   <Button size="sm" variant="secondary" onClick={() => { setDayDate(null); openShiftModal(dayDate!, emp, e); }}>✏️</Button>

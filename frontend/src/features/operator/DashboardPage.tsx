@@ -184,6 +184,12 @@ export function DashboardPage() {
                 <span style={{color:statusColors[dayModal.myEntry.status]||'#94a3b8',fontSize:13}}>
                   ● {dayModal.myEntry.status}
                 </span>
+                {dayModal.myEntry.comment && (
+                  <div className={styles.shiftComment}>
+                    <span className={styles.shiftCommentLabel}>Комментарий</span>
+                    <span>{dayModal.myEntry.comment}</span>
+                  </div>
+                )}
               </div>
             ) : <p className={styles.noEntry}>У вас нет смены в этот день</p>}
 

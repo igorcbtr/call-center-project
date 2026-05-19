@@ -97,7 +97,8 @@ exports.createShiftEntry = async (req, res) => {
        comment||null, req.user?.id||null]);
 
     if (['admin','moderator'].includes(req.user?.role) && req.user.id !== uid) {
-      await notifyUser(uid, 'Вам назначена смена', `Смена «${st.name}» на ${formatDateRu(date)}`, 'shift', r.rows[0].id, 'shift_entry');
+      const commentText = comment?.trim() ? ` Комментарий: ${comment.trim()}` : '';
+      await notifyUser(uid, 'Вам назначена смена', `Смена «${st.name}» на ${formatDateRu(date)}.${commentText}`, 'shift', r.rows[0].id, 'shift_entry');
     }
     res.json({ message: 'Создана', entry: r.rows[0] });
   } catch(err) {
