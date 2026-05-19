@@ -1,20 +1,5 @@
 const pool = require('./db.js');
-
-async function notifyAdmins(title, body, kind, refId, refType) {
-  try {
-    const admins = await pool.query("SELECT id FROM users WHERE role IN ('admin','moderator') AND status=true");
-    for (const adm of admins.rows)
-      await pool.query('INSERT INTO notifications (user_id,title,body,kind,ref_id,ref_type) VALUES ($1,$2,$3,$4,$5,$6)',
-        [adm.id, title, body, kind||'info', refId||null, refType||null]);
-  } catch(e) { console.error('notify error', e.message); }
-}
-
-async function notifyUser(userId, title, body, kind, refId, refType) {
-  try {
-    await pool.query('INSERT INTO notifications (user_id,title,body,kind,ref_id,ref_type) VALUES ($1,$2,$3,$4,$5,$6)',
-      [userId, title, body, kind||'info', refId||null, refType||null]);
-  } catch(e) { console.error('notify error', e.message); }
-}
+const { notifyAdmins, notifyUser } = require('./notificationHub.js');
 
 function formatDateRu(value) {
   if (!value) return '';

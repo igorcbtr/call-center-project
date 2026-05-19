@@ -7,17 +7,19 @@ const kindIcons: Record<string, string> = {
   info: 'ℹ️', warning: '⚠️', success: '✅', error: '❌', shift: '📅',
 };
 
+const baseUrl = import.meta.env.VITE_API_URL || 'http://localhost:3002/api';
+
 export function NotificationBell() {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
-  const { role } = useAuth();
+  const { role, token } = useAuth();
   const canSeeRequests = role === 'admin' || role === 'moderator';
   const { data, refetch } = useNotificationsQuery(undefined, {
     pollingInterval: 5000,
     refetchOnFocus: true,
     refetchOnReconnect: true,
   });
-  const { data: pendingRequests = [] } = useChangeRequestsQuery(
+  const { data: pendingRequests = [], refetch: refetchRequests } = useChangeRequestsQuery(
     { status: 'pending' },
     { skip: !canSeeRequests, pollingInterval: 5000, refetchOnFocus: true, refetchOnReconnect: true }
   );
@@ -30,6 +32,17 @@ export function NotificationBell() {
     document.addEventListener('mousedown', handler);
     return () => document.removeEventListener('mousedown', handler);
   }, []);
+
+  useEffect(() => {
+    if (!token) return undefined;
+    const url = `${baseUrl}/notifications/stream?token=${encodeURIComponent(token)}`;
+    const stream = new EventSource(url);
+    stream.onmessage = () => {
+      void refetch();
+      if (canSeeRequests) void refetchRequests();
+    };
+    return () => stream.close();
+  }, [canSeeRequests, refetch, refetchRequests, token]);
 
   const handleOpen = () => {
     setOpen(o => !o);

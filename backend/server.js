@@ -8,6 +8,7 @@ const admin   = require('./adminService');
 const grafic  = require('./graficController');
 const docs    = require('./documentsController');
 const tasks   = require('./tasksController');
+const notifications = require('./notificationHub');
 const authMw  = require('./middleware');
 const { requireRole } = authMw;
 
@@ -97,6 +98,7 @@ api.post('/schedule/public-schedule', authMw, grafic.getPublicSchedule);
 api.get ('/scan/logs',   authMw, requireRole('admin','moderator'), admin.getWorkLogs);
 
 // Notifications
+api.get ('/notifications/stream', notifications.stream);
 api.get ('/notifications',      authMw, grafic.getNotifications);
 api.post('/notifications/read', authMw, grafic.markNotificationsRead);
 

@@ -1,6 +1,7 @@
 const pool = require('./db.js');
 const bcrypt = require('bcrypt');
 const QRCode = require('qrcode');
+const { notifyUser } = require('./notificationHub.js');
 const SALT_ROUNDS = 10;
 
 // ── Audit helper ────────────────────────────────────────────────────────────
@@ -251,6 +252,16 @@ exports.addComment = async (req, res) => {
     const r = await pool.query(
       'INSERT INTO staff_comments (staff_id,author_id,body) VALUES ($1,$2,$3) RETURNING *',
       [staffId, req.user.id, body.trim()]);
+    if (staffId !== req.user.id) {
+      await notifyUser(
+        staffId,
+        'Новый комментарий',
+        `${req.user.fio || 'Руководитель'} добавил комментарий: ${body.trim()}`,
+        'info',
+        r.rows[0].id,
+        'staff_comment'
+      );
+    }
     res.json({ message: 'Добавлен', comment: r.rows[0] });
   } catch(err) { res.status(500).json({ message: 'Ошибка' }); }
 };
@@ -270,6 +281,16 @@ exports.addTestResult = async (req, res) => {
     const r = await pool.query(
       'INSERT INTO test_results (user_id,added_by,test_name,score,comment) VALUES ($1,$2,$3,$4,$5) RETURNING *',
       [userId, req.user.id, test_name.trim(), score||null, comment||null]);
+    if (userId !== req.user.id) {
+      await notifyUser(
+        userId,
+        'Добавлен результат теста',
+        `${req.user.fio || 'Руководитель'} добавил результат «${test_name.trim()}»${score ? `: ${score}` : ''}`,
+        'info',
+        r.rows[0].id,
+        'test_result'
+      );
+    }
     res.json({ message: 'Добавлено', result: r.rows[0] });
   } catch(err) { res.status(500).json({ message: 'Ошибка' }); }
 };

@@ -444,7 +444,7 @@ npm run dev</code></pre>
         <tr><td>Смена удалена администратором</td><td>Сотруднику</td><td>⚠️</td></tr>
         <tr><td>Неделя подтверждена</td><td>Всем сотрудникам недели</td><td>✅</td></tr>
       </table>
-      <div class="alert alert-info">💡 Уведомления и счётчик на колокольчике обновляются автоматически; у админа и модератора счётчик также учитывает ожидающие заявки.</div>
+      <div class="alert alert-info">💡 Уведомления и счётчик на колокольчике обновляются в реальном времени; у админа и модератора счётчик также учитывает ожидающие заявки.</div>
     </section>
 
     <!-- FREE TIME -->
@@ -500,6 +500,7 @@ npm run dev</code></pre>
 
       <h3>Уведомления</h3>
       <div class="api-endpoint"><span class="method m-get">GET</span><span class="endpoint-path">/api/notifications</span><span class="endpoint-desc">Мои уведомления</span></div>
+      <div class="api-endpoint"><span class="method m-get">GET</span><span class="endpoint-path">/api/notifications/stream</span><span class="endpoint-desc">Real-time канал уведомлений (SSE)</span></div>
       <div class="api-endpoint"><span class="method m-post">POST</span><span class="endpoint-path">/api/notifications/read</span><span class="endpoint-desc">Пометить прочитанными</span></div>
     </section>
 
@@ -558,7 +559,7 @@ VITE_KNOWLEDGE_URL=https://your-knowledge-base-url.com</code></pre>
 
       <div class="card">
         <div class="card-title">Не пришли уведомления — что делать?</div>
-        <div class="card-body">Проверьте, что бэкенд запущен и доступен. Уведомления обновляются каждые 30 секунд. Убедитесь, что токен авторизации актуален (не истёк).</div>
+        <div class="card-body">Проверьте, что бэкенд запущен и доступен. Колокольчик использует real-time канал; если соединение временно оборвалось, интерфейс всё равно периодически обновляет данные. Убедитесь, что токен авторизации актуален (не истёк).</div>
       </div>
     </section>
 

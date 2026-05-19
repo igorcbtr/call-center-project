@@ -5,6 +5,7 @@ const pool = require('./db.js');
 const path = require('path');
 const fs = require('fs');
 const multer = require('multer');
+const { notifyUser } = require('./notificationHub.js');
 
 const TASK_UPLOADS_DIR = path.join(__dirname, 'uploads', 'tasks');
 if (!fs.existsSync(TASK_UPLOADS_DIR)) fs.mkdirSync(TASK_UPLOADS_DIR, { recursive: true });
@@ -126,6 +127,9 @@ exports.createTask = async (req, res) => {
        VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING *`,
       [title.trim(), description || null, assignee, req.user.id, due_date || null, priority || 'normal', status]
     );
+    if (assignee !== req.user.id) {
+      await notifyUser(assignee, 'Новое задание', `Вам назначено задание «${title.trim()}»`, 'info', r.rows[0].id, 'task');
+    }
     res.json({ message: 'Создано', task: r.rows[0] });
   } catch (err) {
     console.error(err);
@@ -161,6 +165,9 @@ exports.updateTask = async (req, res) => {
        updated_at=NOW() WHERE id=$7 RETURNING *`,
       [newTitle, newDesc, newStatus, newDue, newPriority, newAssignee, id]
     );
+    if (newAssignee && newAssignee !== req.user.id) {
+      await notifyUser(newAssignee, 'Задание обновлено', `Задание «${newTitle}» обновлено`, 'info', id, 'task');
+    }
     res.json({ message: 'Обновлено', task: r.rows[0] });
   } catch (err) {
     console.error(err);
